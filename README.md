@@ -15,7 +15,7 @@ A Python tool that uses Azure OpenAI to generate comprehensive progress reports 
 
 ```
 reportr/
-├── reportr-client.py          # Main client application
+├── reportr_client.py          # Main client application
 ├── requirements.txt           # Python dependencies
 ├── README.md                  # This file
 ├── features/                  # Feature modules
@@ -23,7 +23,7 @@ reportr/
 │   │   ├── progress-report.py # Progress report implementation
 │   │   └── prompt.txt         # AI prompt template
 │   └── summarize-repo/        # Repository summary feature
-│       ├── summarize-repo.py  # Summary implementation
+│       ├── summarize_repo.py  # Summary implementation
 │       └── prompt.txt         # AI prompt template
 └── venv/                      # Virtual environment
 ```
