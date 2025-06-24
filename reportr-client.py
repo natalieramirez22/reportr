@@ -1,26 +1,22 @@
 import os
-import openai
 from openai import AzureOpenAI
 from dotenv import load_dotenv
+from features.progress_report.progress_report import create_progress_report
+
 load_dotenv()
 
-# Set up the Azure OpenAI client
-client = AzureOpenAI(
-    api_key=os.getenv("AZURE_OPENAI_KEY"),
-    api_version="2024-02-15-preview",
-    azure_endpoint="https://natalie-design-agent-resource.cognitiveservices.azure.com/"
-)
-
-# Function to summarize a repo
-def summarize_repo():
-    response = client.chat.completions.create(
-        model="reportr",  # This is your deployment name
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant that summarizes code repositories."},
-            {"role": "user", "content": "Summarize the purpose of this Python repo."}
-        ]
+def create_client():
+    """Create and return an Azure OpenAI client"""
+    return AzureOpenAI(
+        api_key=os.getenv("AZURE_OPENAI_KEY"),
+        api_version="2024-02-15-preview",
+        azure_endpoint="https://natalie-design-agent-resource.cognitiveservices.azure.com/"
     )
-    print(response.choices[0].message.content)
 
 if __name__ == "__main__":
-    summarize_repo()
+    # Create the client
+    client = create_client()
+    
+    # Call the progress report function
+    report = create_progress_report(client)
+    print(report)
