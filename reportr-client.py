@@ -2,6 +2,7 @@ import os
 from openai import AzureOpenAI
 from dotenv import load_dotenv
 from features.progress_report.progress_report import create_progress_report
+from features.generate_readme.generate_readme import generate_readme, write_to_readme_file
 
 load_dotenv()
 
@@ -20,3 +21,11 @@ if __name__ == "__main__":
     # Call the progress report function
     report = create_progress_report(client)
     print(report)
+    
+    # Generate a README for the current repository
+    print("\n" + "="*50)
+    print("GENERATING README")
+    print("="*50)
+    readme = generate_readme(client)
+    write_to_readme_file(readme)
+    print(readme)
