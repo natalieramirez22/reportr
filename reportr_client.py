@@ -35,7 +35,7 @@ def parse_arguments():
             Examples:
             python reportr_client.py --progress-report
             python reportr_client.py --generate-readme
-            python reportr_client.py --summarize-repo
+            python reportr_client.py --summarize-repo --path /path/to/repo
         """,
     )
 
@@ -58,6 +58,14 @@ def parse_arguments():
         "--summarize-repo",
         action="store_true",
         help="Summarize the purpose of the current repository",
+    )
+
+    # 'path' argument to specify the local path to the repository or directory
+    parser.add_argument(
+        "--path",
+        type=str,
+        default=".",
+        help="Path to the local repository or directory to summarize (default: current directory)",
     )
 
     return parser.parse_args()
@@ -85,7 +93,7 @@ def execute_features(args):
 
     # if 'summarize-repo' is provided, summarize the purpose of the current repository
     if args.summarize_repo:
-        summary = summarize_repo(client)
+        summary = summarize_repo(client, repo_path=args.path)
         results.append(("Repository Summary", summary))
 
     return results
