@@ -7,7 +7,11 @@ from features.generate_readme.generate_readme import (
     generate_readme,
     write_to_readme_file,
 )
-from features.summarize_repo.summarize_repo import summarize_repo
+from features.summarize_repo.summarize_repo import (
+    summarize_repo,
+    save_repo_structure_to_json,
+    summarize_repo_with_json_structure,
+)
 
 load_dotenv()
 
@@ -70,7 +74,21 @@ def parse_arguments():
     parser.add_argument(
         "--summarize-repo",
         action="store_true",
-        help="Summarize the purpose of the current repository",
+        help="Summarize the purpose of the current repository (directory-by-directory approach)",
+    )
+
+    # 'summarize-repo-structure' arg to summarize using formatted structure
+    parser.add_argument(
+        "--summarize-repo-structure",
+        action="store_true",
+        help="Summarize the repository using the entire structure as formatted context",
+    )
+
+    # 'summarize-repo-json' arg to summarize using JSON structure
+    parser.add_argument(
+        "--summarize-repo-json",
+        action="store_true",
+        help="Summarize the repository using the raw JSON structure (most efficient for large repos)",
     )
 
     # 'path' argument to specify the local path to the repository or directory
@@ -79,6 +97,15 @@ def parse_arguments():
         type=str,
         default=".",
         help="Path to the local repository or directory to summarize (default: current directory)",
+    )
+
+    # 'save-json' argument to save repository structure to JSON file
+    parser.add_argument(
+        "--save-json",
+        type=str,
+        help="Save repository structure to JSON file (specify filename or use default: repo_structure.json)",
+        nargs="?",
+        const="repo_structure.json",
     )
 
     return parser.parse_args()
@@ -114,6 +141,18 @@ def execute_features(args):
         summary = summarize_repo(client, repo_path=args.path)
         results.append(("Repository Summary", summary))
 
+    # if 'summarize-repo-json' is provided, summarize using JSON structure
+    if args.summarize_repo_json:
+        summary = summarize_repo_with_json_structure(client, repo_path=args.path)
+        results.append(("Repository JSON Structure Summary", summary))
+
+    # if 'save-json' is provided, save repository structure to JSON file
+    if args.save_json:
+        output_file = save_repo_structure_to_json(args.path, args.save_json)
+        results.append(
+            ("JSON Structure", f"Repository structure saved to: {output_file}")
+        )
+
     return results
 
 
@@ -122,6 +161,16 @@ def main():
 
     # parse the arguments
     args = parse_arguments()
+
+    # if no command provided but summarize-repo flag is used, execute it
+    if not args.command and (
+        args.summarize_repo or args.summarize_repo_json or args.save_json
+    ):
+        results = execute_features(args)
+        # print the results
+        for title, content in results:
+            print(f"{title.upper()}\n\n{content}\n\n\n\n")
+        return
 
     # if no command provided, show help
     if not args.command:
