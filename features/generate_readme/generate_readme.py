@@ -1,8 +1,8 @@
 import os
+import json
 import openai
 from openai import AzureOpenAI
 from dotenv import load_dotenv
-import json
 from pathlib import Path
 
 def analyze_repository_structure(repo_path="."):
@@ -146,7 +146,8 @@ Files in Repository:
             prompt_template = f.read()
         
         # Replace the placeholder with actual data
-        messages = eval(prompt_template.replace('{analysis_context}', f'"{analysis_context}"'))
+        prompt_template = prompt_template.replace('{analysis_context}', analysis_context)
+        messages = json.loads(prompt_template)
         
     except Exception as e:
         print(f"Error loading prompt template: {e}")

@@ -46,12 +46,12 @@ pip install -r requirements.txt
 
 ## Usage
 
-The main entry point is the `reportr-client.py` script. This script orchestrates the various features for generating README files and reports.
+The main entry point is the `reportr_client.py` script. This script orchestrates the various features for generating README files and reports.
 
 ### Basic Usage
 
 ```bash
-python reportr-client.py [options]
+python reportr_client.py [options]
 ```
 
 *Note: Specific command-line options and arguments can be added based on your implementation details.*
@@ -103,7 +103,7 @@ This project currently does not have a license file included. Please contact the
 ```
 .
 ├── README.md
-├── reportr-client.py              # Main script to run the client
+├── reportr_client.py              # Main script to run the client
 ├── requirements.txt               # Python dependencies
 └── features
     ├── __init__.py

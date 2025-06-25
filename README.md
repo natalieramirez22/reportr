@@ -15,7 +15,7 @@ A Python tool that uses Azure OpenAI to generate comprehensive progress reports 
 
 ```
 reportr/
-├── reportr-client.py          # Main client application
+├── reportr_client.py          # Main client application
 ├── requirements.txt           # Python dependencies
 ├── README.md                  # This file
 ├── features/                  # Feature modules
@@ -50,7 +50,7 @@ reportr/
 Generate a progress report for the current repository (last 30 days):
 
 ```bash
-python reportr-client.py
+python reportr_client.py
 ```
 
 ### Custom Time Period
@@ -58,13 +58,13 @@ python reportr-client.py
 Generate a report for the last 7 days:
 
 ```bash
-python reportr-client.py --days 7
+python reportr_client.py --days 7
 ```
 
 Generate a report for all time:
 
 ```bash
-python reportr-client.py --days 0
+python reportr_client.py --days 0
 ```
 
 ### Different Repository Path
@@ -72,7 +72,7 @@ python reportr-client.py --days 0
 Analyze a different repository:
 
 ```bash
-python reportr-client.py --repo-path /path/to/other/repo
+python reportr_client.py --repo-path /path/to/other/repo
 ```
 
 ### Simple Summary Mode
@@ -80,7 +80,7 @@ python reportr-client.py --repo-path /path/to/other/repo
 Get a simple repository summary instead of a progress report:
 
 ```bash
-python reportr-client.py --mode summary
+python reportr_client.py --mode summary
 ```
 
 ## Command Line Options
@@ -103,7 +103,7 @@ The progress report includes:
 
 The application uses a modular architecture where:
 
-- **Main Client** (`reportr-client.py`): Handles command-line interface and orchestrates features
+- **Main Client** (`reportr_client.py`): Handles command-line interface and orchestrates features
 - **Feature Modules**: Each feature is in its own directory with implementation and prompt files
 - **Client Injection**: The Azure OpenAI client is injected into each feature function for better testability and modularity
 - **Prompt Templates**: AI prompts are stored in separate `.txt` files for easy customization
