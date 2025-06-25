@@ -1,4 +1,10 @@
 [
-    {"role": "system", "content": "You are a helpful assistant that summarizes code repositories."},
-    {"role": "user", "content": "Summarize the purpose of this Python repo."}
+  {
+    "role": "system",
+    "content": "You are a helpful assistant that summarizes code repositories for onboarding purposes."
+  },
+  {
+    "role": "user",
+    "content": "Here is a list of Python files in the directory '{path}':\n{file_list}\n\nProvide a concise 2-3 sentence summary of what this directory likely does. Focus only on the most important functionality and avoid verbose or repetitive details."
+  }
 ]

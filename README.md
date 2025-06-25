@@ -103,7 +103,7 @@ The progress report includes:
 
 The application uses a modular architecture where:
 
-- **Main Client** (`reportr-client.py`): Handles command-line interface and orchestrates features
+- **Main Client** (`reportr_client.py`): Handles command-line interface and orchestrates features
 - **Feature Modules**: Each feature is in its own directory with implementation and prompt files
 - **Client Injection**: The Azure OpenAI client is injected into each feature function for better testability and modularity
 - **Prompt Templates**: AI prompts are stored in separate `.txt` files for easy customization
