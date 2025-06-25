@@ -33,11 +33,9 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
             Examples:
-            python reportr_client.py progress-report
-            python reportr_client.py progress-report --username "msft-alias"
-            python reportr_client.py progress-report --days 60 --detailed
-            python reportr_client.py generate-readme
-            python reportr_client.py summarize-repo
+            python reportr_client.py --progress-report
+            python reportr_client.py --generate-readme
+            python reportr_client.py --summarize-repo --path /path/to/repo
         """,
     )
 
@@ -68,9 +66,19 @@ def parse_arguments():
         "generate-readme", help="Generate a README file for the current repository"
     )
 
-    # summarize-repo subcommand
-    summary_parser = subparsers.add_parser(
-        "summarize-repo", help="Summarize the purpose of the current repository"
+    # 'summarize-repo' arg to summarize the purpose of the current repository
+    parser.add_argument(
+        "--summarize-repo",
+        action="store_true",
+        help="Summarize the purpose of the current repository",
+    )
+
+    # 'path' argument to specify the local path to the repository or directory
+    parser.add_argument(
+        "--path",
+        type=str,
+        default=".",
+        help="Path to the local repository or directory to summarize (default: current directory)",
     )
 
     return parser.parse_args()
@@ -101,9 +109,9 @@ def execute_features(args):
         write_to_readme_file(readme)
         results.append(("README", readme))
 
-    # if 'summarize-repo' command is provided, summarize the purpose of the current repository
-    elif args.command == "summarize-repo":
-        summary = summarize_repo(client)
+    # if 'summarize-repo' is provided, summarize the purpose of the current repository
+    if args.summarize_repo:
+        summary = summarize_repo(client, repo_path=args.path)
         results.append(("Repository Summary", summary))
 
     return results
