@@ -23,7 +23,7 @@ reportr/
 │   │   ├── progress-report.py # Progress report implementation
 │   │   └── prompt.txt         # AI prompt template
 │   └── summarize-repo/        # Repository summary feature
-│       ├── summarize-repo.py  # Summary implementation
+│       ├── summarize_repo.py  # Summary implementation
 │       └── prompt.txt         # AI prompt template
 └── venv/                      # Virtual environment
 ```
