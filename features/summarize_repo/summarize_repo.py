@@ -1,5 +1,18 @@
 import os
 import json
+import argparse
+from openai import AzureOpenAI
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
+
+# Set up Azure OpenAI client
+client = AzureOpenAI(
+    api_key=os.getenv("AZURE_OPENAI_KEY"),
+    api_version="2024-02-15-preview",
+    azure_endpoint="https://natalie-design-agent-resource.cognitiveservices.azure.com/"
+)
 
 # Walk the repo and collect Python files by directory
 def collect_python_files(repo_path):
@@ -29,7 +42,7 @@ def load_prompt_template(path, file_list):
     return prompt_template
 
 # Summarize a directory using the model
-def summarize_directory(path, files, client):
+def summarize_directory(path, files):
     file_list = "\n".join(files)
     messages = load_prompt_template(path, file_list)
     response = client.chat.completions.create(
@@ -51,44 +64,21 @@ def print_tree(root_path, prefix=""):
         elif item.endswith(".py"):
             print(f"{prefix}📄 {item}")
 
-# Main function to be called by the client
-def summarize_repo(client, repo_path="."):
-    """
-    Summarize the repository structure and contents.
-    
-    Args:
-        client: Azure OpenAI client instance
-        repo_path: Path to the repository (default: current directory)
-    
-    Returns:
-        str: Summary of the repository
-    """
-    summary_parts = []
-    
-    # Add directory tree
-    summary_parts.append("📂 Directory Tree:")
-    tree_output = []
-    def capture_tree(root_path, prefix=""):
-        SKIP_DIRS = {'venv', '.git', '__pycache__'}
-        for item in sorted(os.listdir(root_path)):
-            full_path = os.path.join(root_path, item)
-            if os.path.isdir(full_path):
-                if item in SKIP_DIRS or item.startswith('.'):
-                    continue
-                tree_output.append(f"{prefix}📁 {item}")
-                capture_tree(full_path, prefix + "    ")
-            elif item.endswith(".py"):
-                tree_output.append(f"{prefix}📄 {item}")
-    
-    capture_tree(repo_path)
-    summary_parts.append("\n".join(tree_output))
-    
-    # Add summaries for each directory
-    summary_parts.append("\n🧠 Summaries:")
+# Run the summarization
+def run_reportr(repo_path):
+    print("📂 Directory Tree:\n")
+    print_tree(repo_path)
+
+    print("\n🧠 Summaries:\n")
     directory_map = collect_python_files(repo_path)
     for path, files in directory_map.items():
-        summary_parts.append(f"\n📁 Directory: {path}")
-        summary = summarize_directory(path, files, client)
-        summary_parts.append(f"📝 Summary:\n{summary}")
-    
-    return "\n".join(summary_parts)
+        print(f"\n📁 Directory: {path}")
+        summary = summarize_directory(path, files)
+        print(f"📝 Summary:\n{summary}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Reportr CLI")
+    parser.add_argument("--path", type=str, default=".", help="Path to the local repo directory")
+    args = parser.parse_args()
+
+    run_reportr(args.path)
