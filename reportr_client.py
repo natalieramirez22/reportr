@@ -33,31 +33,44 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
             Examples:
-            python reportr_client.py --progress-report
-            python reportr_client.py --generate-readme
-            python reportr_client.py --summarize-repo
+            python reportr_client.py progress-report
+            python reportr_client.py progress-report --username "msft-alias"
+            python reportr_client.py progress-report --days 60 --detailed
+            python reportr_client.py generate-readme
+            python reportr_client.py summarize-repo
         """,
     )
 
-    # 'progress-report' arg to generate a report of commits, contributors, and other git history
-    parser.add_argument(
-        "--progress-report",
-        action="store_true",
-        help="Generate a progress report for the current repository",
+    # create subparsers for different commands
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # progress-report subcommand
+    progress_parser = subparsers.add_parser(
+        "progress-report", help="Generate a progress report for the current repository"
+    )
+    progress_parser.add_argument(
+        "--username",
+        action="append",
+        help="Filter by specific contributor username(s). Can be used multiple times.",
+    )
+    progress_parser.add_argument(
+        "--days",
+        type=int,
+        default=30,
+        help="Number of days to look back (default: 30, use 0 for all time)",
+    )
+    progress_parser.add_argument(
+        "--detailed", action="store_true", help="Include detailed contributor summaries"
     )
 
-    # 'generate-readme' arg to generate a README file for the current repository
-    parser.add_argument(
-        "--generate-readme",
-        action="store_true",
-        help="Generate a README file for the current repository",
+    # generate-readme subcommand
+    readme_parser = subparsers.add_parser(
+        "generate-readme", help="Generate a README file for the current repository"
     )
 
-    # 'summarize-repo' arg to summarize the purpose of the current repository
-    parser.add_argument(
-        "--summarize-repo",
-        action="store_true",
-        help="Summarize the purpose of the current repository",
+    # summarize-repo subcommand
+    summary_parser = subparsers.add_parser(
+        "summarize-repo", help="Summarize the purpose of the current repository"
     )
 
     return parser.parse_args()
@@ -72,19 +85,24 @@ def execute_features(args):
 
     results = []
 
-    # if 'progress-report' is provided, generate a progress report
-    if args.progress_report:
-        report = create_progress_report(client)
+    # if 'progress-report' command is provided, generate a progress report
+    if args.command == "progress-report":
+        report = create_progress_report(
+            client,
+            days_back=args.days,
+            contributor_filter=args.username,
+            include_contributor_summaries=args.detailed,
+        )
         results.append(("Progress Report", report))
 
-    # if 'generate-readme' is provided, generate a README file
-    if args.generate_readme:
+    # if 'generate-readme' command is provided, generate a README file
+    elif args.command == "generate-readme":
         readme = generate_readme(client)
         write_to_readme_file(readme)
         results.append(("README", readme))
 
-    # if 'summarize-repo' is provided, summarize the purpose of the current repository
-    if args.summarize_repo:
+    # if 'summarize-repo' command is provided, summarize the purpose of the current repository
+    elif args.command == "summarize-repo":
         summary = summarize_repo(client)
         results.append(("Repository Summary", summary))
 
@@ -97,8 +115,8 @@ def main():
     # parse the arguments
     args = parse_arguments()
 
-    # if no arguments provided, show help
-    if not any([args.progress_report, args.generate_readme, args.summarize_repo]):
+    # if no command provided, show help
+    if not args.command:
         parser = argparse.ArgumentParser(
             description="Reportr - AI-powered repository analysis and documentation tool"
         )
