@@ -284,16 +284,57 @@ def summarize_by_folder(client, repo_path="."):
         # Add summary header
         summary_parts.append("[bold green]Summary:[/bold green]")
         
-        # Process each line individually to ensure Rich markup works consistently
-        for line in summary.split('\n'):
-            # Always apply markdown formatting to each line, even if empty
-            if line.strip():
-                # Format the line with markdown text formatting
-                formatted_line = format_markdown_text(line.strip())
-                summary_parts.append(formatted_line)
-            else:
-                # Preserve empty lines
+        # Process each line with proper formatting similar to summarize_entire_directory
+        lines = summary.split('\n')
+        in_numbered_list = False
+        
+        for line in lines:
+            original_line = line
+            line = line.strip()
+            
+            if not line:
                 summary_parts.append("")
+                in_numbered_list = False
+                continue
+                
+            # Check for markdown headers (## Section Name)
+            if line.startswith('## '):
+                header_text = line[3:].strip()
+                formatted_line = format_markdown_text(header_text)
+                summary_parts.append(f"\n[bold green]{formatted_line}[/bold green]")
+                in_numbered_list = False
+            # Handle numbered lists
+            elif line.startswith(('1. ', '2. ', '3. ', '4. ', '5. ', '6. ', '7. ', '8. ', '9. ')):
+                space_index = line.find(' ')
+                number_part = line[:space_index + 1]
+                text_content = line[space_index + 1:].strip()
+                formatted_line = format_markdown_text(text_content)
+                summary_parts.append(f"    [bold cyan]{number_part}[/bold cyan][white]{formatted_line}[/white]")
+                in_numbered_list = True
+            # Handle bullet points
+            elif line.startswith('- '):
+                text_content = line[2:].strip()
+                formatted_line = format_markdown_text(text_content)
+                if in_numbered_list:
+                    summary_parts.append(f"        ◦ [white]{formatted_line}[/white]")
+                else:
+                    summary_parts.append(f"    • [white]{formatted_line}[/white]")
+            # Handle continuation text under numbered items
+            elif in_numbered_list and (original_line.startswith('  ') or original_line.startswith('\t') or line.startswith('◦')):
+                formatted_line = format_markdown_text(line)
+                if line.startswith('◦'):
+                    summary_parts.append(f"        [white]{formatted_line}[/white]")
+                else:
+                    summary_parts.append(f"        ◦ [white]{formatted_line}[/white]")
+            # Regular text
+            else:
+                formatted_line = format_markdown_text(line)
+                # Ensure all text has proper color formatting
+                if formatted_line and not formatted_line.startswith('['):
+                    summary_parts.append(f"[white]{formatted_line}[/white]")
+                else:
+                    summary_parts.append(formatted_line)
+                in_numbered_list = False
 
     return "\n".join(summary_parts)
 

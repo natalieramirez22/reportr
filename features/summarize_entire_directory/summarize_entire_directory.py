@@ -267,20 +267,30 @@ def summarize_entire_directory(client, repo_path="."):
             text_content = line[2:].strip()
             formatted_line = format_markdown_text(text_content)
             if in_numbered_list:
-                # This is a sub-bullet under a numbered item
-                processed_lines.append(f"        ◦ [bright_black]{formatted_line}[/bright_black]")
+                # This is a sub-bullet under a numbered item - use white, not bright_black
+                processed_lines.append(f"        ◦ [white]{formatted_line}[/white]")
             else:
                 # This is a top-level bullet
                 processed_lines.append(f"    • [white]{formatted_line}[/white]")
         # Check if this line looks like it should be indented under a numbered item
-        elif in_numbered_list and (original_line.startswith('  ') or original_line.startswith('\t')):
+        elif in_numbered_list and (original_line.startswith('  ') or original_line.startswith('\t') or line.startswith('◦')):
             # This is continuation text under a numbered item
             formatted_line = format_markdown_text(line)
-            processed_lines.append(f"        [dim white]{formatted_line}[/dim white]")
+            if line.startswith('◦'):
+                # Already has bullet point
+                processed_lines.append(f"        [white]{formatted_line}[/white]")
+            else:
+                # Add bullet point
+                processed_lines.append(f"        ◦ [white]{formatted_line}[/white]")
         # Regular text - keep as is but format markdown
         else:
             formatted_line = format_markdown_text(line)
-            processed_lines.append(formatted_line)
+            # Make sure all regular text is properly colored (not greyed out)
+            if formatted_line and not formatted_line.startswith('['):
+                # Add white color if no color formatting is already present
+                processed_lines.append(f"[white]{formatted_line}[/white]")
+            else:
+                processed_lines.append(formatted_line)
             in_numbered_list = False
             current_list_number = 0
     
