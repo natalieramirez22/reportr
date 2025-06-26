@@ -36,6 +36,8 @@ def parse_arguments():
             python reportr_client.py progress-report
             python reportr_client.py progress-report --username "msft-alias"
             python reportr_client.py progress-report --days 60 --detailed
+            python reportr_client.py progress-report --branch "develop"
+            python reportr_client.py progress-report --branch "feature/new-feature" --username "dev1" --username "dev2"
             python reportr_client.py generate-readme
             python reportr_client.py summarize-repo
         """,
@@ -61,6 +63,11 @@ def parse_arguments():
     )
     progress_parser.add_argument(
         "--detailed", action="store_true", help="Include detailed contributor summaries"
+    )
+    progress_parser.add_argument(
+        "--branch",
+        type=str,
+        help="Specify which branch to analyze (default: tries main, then master, then all branches)",
     )
 
     # generate-readme subcommand
@@ -92,6 +99,7 @@ def execute_features(args):
             days_back=args.days,
             contributor_filter=args.username,
             include_contributor_summaries=args.detailed,
+            branch=args.branch,
         )
         results.append(("Progress Report", report))
 
@@ -124,11 +132,7 @@ def main():
         return
 
     # execute the requested features
-    results = execute_features(args)
-
-    # print the results
-    for title, content in results:
-        print(f"{title.upper()}\n\n{content}\n\n\n\n")
+    execute_features(args)
 
 
 if __name__ == "__main__":
