@@ -2,6 +2,9 @@
 features/generate_readme/__pycache__/
 features/progress_report/__pycache__/
 features/summarize_repo/__pycache__/
+features/__pycache__/
+functions/__pycache__/
+__pycache__/
 
 #env
 .env
