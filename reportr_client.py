@@ -9,8 +9,10 @@ from features.generate_readme.generate_readme import (
     generate_readme,
     write_to_readme_file,
 )
-from features.summarize_repo.summarize_repo import (
+from features.summarize_by_folder.summarize_by_folder import (
     summarize_by_folder,
+)
+from features.summarize_entire_directory.summarize_entire_directory import (
     summarize_entire_directory,
 )
 
@@ -127,10 +129,10 @@ def execute_features(args):
         summary = summarize_by_folder(client, repo_path=args.path)
         results.append(("Repository Directory Summary", summary))
     
-    # if 'summarize-entire-directory' command is provided, summarize using JSON structure
+    # if 'summarize-entire-directory' command is provided, summarize entire directory
     elif args.command == "summarize-entire-directory":
         summary = summarize_entire_directory(client, repo_path=args.path)
-        results.append(("Repository JSON Structure Summary", summary))
+        results.append(("Repository Summary", summary))
 
     return results
 

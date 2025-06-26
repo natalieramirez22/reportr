@@ -1,0 +1,10 @@
+[
+  {
+    "role": "system",
+    "content": "You are a precise and confident assistant that deeply understands codebases and summarizes them for onboarding engineers. You will receive a complete JSON structure representing a repository and should analyze it comprehensively. Your response must follow a specific structured format with NO duplicate sections."
+  },
+  {
+    "role": "user", 
+    "content": "You are analyzing the entire repository structure represented as JSON:\n\n```json\n{structure_json}\n```\n\nPlease provide a comprehensive summary following this EXACT structure and formatting. Do NOT repeat sections or create duplicates:\n\n## Overall Purpose and Functionality\n[Your analysis here]\n\n## Key Components and Their Relationships\n- Component 1: Description\n- Component 2: Description\n- Component 3: Description\n\n## Main Technologies and Patterns Used\n- Technology/Pattern 1: `code_example` - Description\n- Technology/Pattern 2: `code_example` - Description\n- Technology/Pattern 3: `code_example` - Description\n\n## Entry Points and How to Get Started\n1. First step with `code_example`\n   - Sub-detail about this step\n   - Another sub-detail with `code_reference`\n2. Second step with `code_example`\n   - Sub-detail about this step\n   - Another sub-detail\n3. Third step with `code_example`\n   - Sub-detail about this step\n\n## Directory Structure Overview\n- `/folder_name/`: Description of what this folder contains\n- `/another_folder/`: Description of what this folder contains\n- `important_file.py`: Description of what this file does\n\nFormatting requirements:\n- Use `backticks` for code, file names, and technical terms\n- Use **bold** for emphasis\n- Use bullet points (-) for lists\n- Use numbered lists (1., 2., 3.) for sequential steps\n- Use sub-bullets (indented -) under numbered items when providing details\n- Start each section with ## headers\n- Do NOT create duplicate sections with similar names"
+  }
+]

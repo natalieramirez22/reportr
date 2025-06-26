@@ -8,3 +8,6 @@ features/summarize_repo/__pycache__/
 
 #venv
 venv/
+
+# .pyc
+__pycache__
