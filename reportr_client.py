@@ -9,9 +9,11 @@ from features.generate_readme.generate_readme import (
     generate_readme,
     write_to_readme_file,
 )
-from features.summarize_repo.summarize_repo import (
-    summarize_by_folder,
-    summarize_entire_directory,
+from features.summarize_details.summarize_details import (
+    summarize_details,
+)
+from features.summarize_overview.summarize_overview import (
+    summarize_overview,
 )
 
 load_dotenv()
@@ -38,7 +40,9 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
             Examples:
-            python reportr_client.py progress-report
+            python reportr_client.py generate-readme
+            python reportr_client.py summarize-details --path /path/to/repo
+            python reportr_client.py summarize-overviews --path /path/to/repo
             python reportr_client.py progress-report --username "msft-alias"
             python reportr_client.py progress-report --days 60 --detailed
             python reportr_client.py progress-report --branch "develop"
@@ -67,6 +71,7 @@ def parse_arguments():
     progress_parser.add_argument(
         "--detailed", action="store_true", help="Include detailed contributor summaries"
     )
+
     progress_parser.add_argument(
         "--branch",
         type=str,
@@ -78,9 +83,9 @@ def parse_arguments():
         "generate-readme", help="Generate a README file for the current repository"
     )
 
-    # summarize-by-folder subcommand
+    # summarize-details subcommand
     summarize_folder_parser = subparsers.add_parser(
-        "summarize-by-folder", help="Summarize the repository using directory-by-directory approach"
+        "summarize-details", help="Summarize a sub-directory with a focus on details"
     )
     summarize_folder_parser.add_argument(
         "--path",
@@ -89,9 +94,9 @@ def parse_arguments():
         help="Path to the local repository or directory to summarize (default: current directory)",
     )
 
-    # summarize-entire-directory subcommand
+    # summarize-overview subcommand
     summarize_entire_parser = subparsers.add_parser(
-        "summarize-entire-directory", help="Summarize the repository using the entire structure as JSON context"
+        "summarize-overview", help="Summarize the repository overview and structure"
     )
     summarize_entire_parser.add_argument(
         "--path",
@@ -130,14 +135,14 @@ def execute_features(args):
         results.append(("README", readme))
 
     # if 'summarize-by-folder' command is provided, summarize using directory-by-directory approach
-    elif args.command == "summarize-by-folder":
-        summary = summarize_by_folder(client, repo_path=args.path)
+    elif args.command == "summarize-details":
+        summary = summarize_details(client, repo_path=args.path)
         results.append(("Repository Directory Summary", summary))
     
-    # if 'summarize-entire-directory' command is provided, summarize using JSON structure
-    elif args.command == "summarize-entire-directory":
-        summary = summarize_entire_directory(client, repo_path=args.path)
-        results.append(("Repository JSON Structure Summary", summary))
+    # if 'summarize-entire-directory' command is provided, summarize entire directory
+    elif args.command == "summarize-overview":
+        summary = summarize_overview(client, repo_path=args.path)
+        results.append(("Repository Summary", summary))
 
     return results
 
@@ -157,7 +162,26 @@ def main():
         return
 
     # execute the requested features
-    execute_features(args)
+    results = execute_features(args)
+
+    # Create Rich console for beautiful output
+    console = Console()
+
+    # print the results with Rich formatting
+    for title, content in results:
+        # Create a styled panel for each result with better width management
+        panel = Panel(
+            content,
+            title=f"[bold blue]{title}[/bold blue]",
+            title_align="left",
+            border_style="blue",
+            padding=(1, 2),
+            expand=False,
+            width=min(120, console.size.width - 4)  # Responsive width with max limit
+        )
+        console.print(panel)
+        console.print()  # Add some spacing between panels
+
 
 if __name__ == "__main__":
     main()
