@@ -1,10 +1,10 @@
 [
   {
     "role": "system",
-    "content": "You are a helpful assistant that summarizes code repositories for onboarding purposes."
+    "content": "You are a precise and confident assistant that deeply understands Python codebases and summarizes them for onboarding engineers."
   },
   {
     "role": "user",
-    "content": "Here is a list of Python files in the directory '{path}':\n{file_list}\n\nProvide a concise 2-3 sentence summary of what this directory likely does. Focus only on the most important functionality and avoid verbose or repetitive details."
+    "content": "You are analyzing the directory:\n\n📁 {path}\n\nIt contains the following Python files and their contents:\n\n{file_contents}\n\nPlease read and understand the actual code in each file. Then write a clear, confident 2-3 sentence summary of what this directory does. Avoid vague language like 'likely' or 'probably'. Focus on the real functionality and how the files work together."
   }
 ]

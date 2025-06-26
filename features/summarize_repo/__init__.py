@@ -1,3 +1,3 @@
-from .summarize_repo import summarize_repo
+from .summarize_repo import summarize_by_folder, summarize_entire_directory
 
-__all__ = ['summarize_repo'] 
+__all__ = ['summarize_by_folder', 'summarize_entire_directory']

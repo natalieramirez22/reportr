@@ -2,12 +2,17 @@ import os
 import argparse
 from openai import AzureOpenAI
 from dotenv import load_dotenv
+from rich.console import Console
+from rich.panel import Panel
 from features.progress_report.progress_report import create_progress_report
 from features.generate_readme.generate_readme import (
     generate_readme,
     write_to_readme_file,
 )
-from features.summarize_repo.summarize_repo import summarize_repo
+from features.summarize_repo.summarize_repo import (
+    summarize_by_folder,
+    summarize_entire_directory,
+)
 
 load_dotenv()
 
@@ -38,8 +43,6 @@ def parse_arguments():
             python reportr_client.py progress-report --days 60 --detailed
             python reportr_client.py progress-report --branch "develop"
             python reportr_client.py progress-report --branch "feature/new-feature" --username "dev1" --username "dev2"
-            python reportr_client.py generate-readme
-            python reportr_client.py summarize-repo
         """,
     )
 
@@ -75,9 +78,26 @@ def parse_arguments():
         "generate-readme", help="Generate a README file for the current repository"
     )
 
-    # summarize-repo subcommand
-    summary_parser = subparsers.add_parser(
-        "summarize-repo", help="Summarize the purpose of the current repository"
+    # summarize-by-folder subcommand
+    summarize_folder_parser = subparsers.add_parser(
+        "summarize-by-folder", help="Summarize the repository using directory-by-directory approach"
+    )
+    summarize_folder_parser.add_argument(
+        "--path",
+        type=str,
+        default=".",
+        help="Path to the local repository or directory to summarize (default: current directory)",
+    )
+
+    # summarize-entire-directory subcommand
+    summarize_entire_parser = subparsers.add_parser(
+        "summarize-entire-directory", help="Summarize the repository using the entire structure as JSON context"
+    )
+    summarize_entire_parser.add_argument(
+        "--path",
+        type=str,
+        default=".",
+        help="Path to the local repository or directory to summarize (default: current directory)",
     )
 
     return parser.parse_args()
@@ -109,10 +129,15 @@ def execute_features(args):
         write_to_readme_file(readme)
         results.append(("README", readme))
 
-    # if 'summarize-repo' command is provided, summarize the purpose of the current repository
-    elif args.command == "summarize-repo":
-        summary = summarize_repo(client)
-        results.append(("Repository Summary", summary))
+    # if 'summarize-by-folder' command is provided, summarize using directory-by-directory approach
+    elif args.command == "summarize-by-folder":
+        summary = summarize_by_folder(client, repo_path=args.path)
+        results.append(("Repository Directory Summary", summary))
+    
+    # if 'summarize-entire-directory' command is provided, summarize using JSON structure
+    elif args.command == "summarize-entire-directory":
+        summary = summarize_entire_directory(client, repo_path=args.path)
+        results.append(("Repository JSON Structure Summary", summary))
 
     return results
 
@@ -133,7 +158,6 @@ def main():
 
     # execute the requested features
     execute_features(args)
-
 
 if __name__ == "__main__":
     main()
