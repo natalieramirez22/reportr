@@ -9,11 +9,11 @@ from features.generate_readme.generate_readme import (
     generate_readme,
     write_to_readme_file,
 )
-from features.summarize_by_folder.summarize_by_folder import (
-    summarize_by_folder,
+from features.summarize_details.summarize_details import (
+    summarize_details,
 )
-from features.summarize_entire_directory.summarize_entire_directory import (
-    summarize_entire_directory,
+from features.summarize_overview.summarize_overview import (
+    summarize_overview,
 )
 
 load_dotenv()
@@ -42,8 +42,8 @@ def parse_arguments():
             Examples:
             python reportr_client.py progress-report
             python reportr_client.py generate-readme
-            python reportr_client.py summarize-by-folder --path /path/to/repo
-            python reportr_client.py summarize-entire-directory --path /path/to/repo
+            python reportr_client.py summarize-details --path /path/to/repo
+            python reportr_client.py summarize-overviews --path /path/to/repo
         """,
     )
 
@@ -74,9 +74,9 @@ def parse_arguments():
         "generate-readme", help="Generate a README file for the current repository"
     )
 
-    # summarize-by-folder subcommand
+    # summarize-details subcommand
     summarize_folder_parser = subparsers.add_parser(
-        "summarize-by-folder", help="Summarize the repository using directory-by-directory approach"
+        "summarize-details", help="Summarize a sub-directory with a focus on details"
     )
     summarize_folder_parser.add_argument(
         "--path",
@@ -87,7 +87,7 @@ def parse_arguments():
 
     # summarize-entire-directory subcommand
     summarize_entire_parser = subparsers.add_parser(
-        "summarize-entire-directory", help="Summarize the repository using the entire structure as JSON context"
+        "summarize-overview", help="Summarize the repository overview and structure"
     )
     summarize_entire_parser.add_argument(
         "--path",
@@ -125,13 +125,13 @@ def execute_features(args):
         results.append(("README", readme))
 
     # if 'summarize-by-folder' command is provided, summarize using directory-by-directory approach
-    elif args.command == "summarize-by-folder":
-        summary = summarize_by_folder(client, repo_path=args.path)
+    elif args.command == "summarize-details":
+        summary = summarize_details(client, repo_path=args.path)
         results.append(("Repository Directory Summary", summary))
     
     # if 'summarize-entire-directory' command is provided, summarize entire directory
-    elif args.command == "summarize-entire-directory":
-        summary = summarize_entire_directory(client, repo_path=args.path)
+    elif args.command == "summarize-overview":
+        summary = summarize_overview(client, repo_path=args.path)
         results.append(("Repository Summary", summary))
 
     return results

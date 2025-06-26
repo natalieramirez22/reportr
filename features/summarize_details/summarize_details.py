@@ -221,7 +221,7 @@ def summarize_directory(path, files, client):
     return response.choices[0].message.content
 
 # Main function to be called by the client
-def summarize_by_folder(client, repo_path="."):
+def summarize_details(client, repo_path="."):
     """
     Summarize the repository structure and contents.
 

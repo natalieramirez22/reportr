@@ -184,7 +184,7 @@ def load_prompt_template(structure_json):
             )
     return prompt_template
 
-def summarize_entire_directory(client, repo_path="."):
+def summarize_overview(client, repo_path="."):
     """
     Summarize the repository using the raw JSON structure as context.
     More efficient for large repositories as it sends the structure directly.
@@ -217,12 +217,12 @@ def summarize_entire_directory(client, repo_path="."):
     formatted_parts = []
     
     # Add a decorated header
-    formatted_parts.append("[bold sky_blue1]Entire Directory Analysis[/bold sky_blue1]\n")
+    formatted_parts.append("[bold sky_blue1]Full Directory Analysis[/bold sky_blue1]\n")
     
     # Add repository info
     repo_name = os.path.basename(os.path.abspath(repo_path))
     formatted_parts.append(f"[bold yellow]Directory:[/bold yellow] {repo_name}")
-    formatted_parts.append(f"[bold yellow]Analysis Method:[/bold yellow] Complete Directory Summary")
+    formatted_parts.append(f"[bold yellow]Analysis Method:[/bold yellow] Summarized Overview")
     formatted_parts.append(f"[bold yellow]Path:[/bold yellow] {repo_path}\n")
     
     # Add the main summary - use plain text with some basic formatting instead of full markdown
