@@ -271,7 +271,7 @@ def summarize_by_folder(client, repo_path="."):
     summary_parts.append("\n".join(tree_output))
 
     # Add summaries for each directory
-    summary_parts.append("\n[bold sky_blue1]Summaries:[/bold sky_blue1]")
+    summary_parts.append("\n[bold sky_blue1]Directory Summaries:[/bold sky_blue1]")
     directory_map = collect_relevant_files(repo_path)
 
     for path, files in directory_map.items():
@@ -280,9 +280,6 @@ def summarize_by_folder(client, repo_path="."):
         
         # Get the raw summary
         summary = summarize_directory(path, files, client)
-        
-        # Add summary header
-        summary_parts.append("[bold green]Summary:[/bold green]")
         
         # Process each line with proper formatting similar to summarize_entire_directory
         lines = summary.split('\n')
@@ -335,6 +332,9 @@ def summarize_by_folder(client, repo_path="."):
                 else:
                     summary_parts.append(formatted_line)
                 in_numbered_list = False
+        
+        # Add spacing between directories
+        summary_parts.append("")
 
     return "\n".join(summary_parts)
 
