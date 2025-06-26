@@ -2,6 +2,8 @@ import os
 import json
 from openai import AzureOpenAI
 from dotenv import load_dotenv
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn
 
 def build_repo_structure(repo_path):
     """
@@ -210,8 +212,23 @@ def summarize_overview(client, repo_path="."):
     # Load prompt template and inject repository structure
     messages = load_prompt_template(structure_json)
 
-    response = client.chat.completions.create(model="reportr", messages=messages)
-    raw_summary = response.choices[0].message.content
+    console = Console()
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Generating AI analysis...", total=None)
+            progress.update(task, description="Generating full directory analysis...")
+            response = client.chat.completions.create(
+                model="reportr", messages=messages, max_tokens=2000, temperature=0.7
+            )
+            raw_summary = response.choices[0].message.content
+            progress.update(task, description="Full directory analysis complete!")
+    except Exception as e:
+        console.print(f"[red]Error generating AI analysis: {e}[/red]")
+        return f"Error: Could not analyze repository"
     
     # Format the response with Rich markup for better presentation
     formatted_parts = []

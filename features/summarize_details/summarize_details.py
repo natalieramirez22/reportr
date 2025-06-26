@@ -4,6 +4,7 @@ from openai import AzureOpenAI
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.tree import Tree
+from rich.progress import Progress, SpinnerColumn, TextColumn
 
 def build_repo_structure(repo_path):
     """
@@ -217,8 +218,25 @@ def summarize_directory(path, files, client):
             file_contents += f"\n\nFile: {file}\n# Error reading file: {e}"
 
     messages = load_prompt_template(path, file_contents)
-    response = client.chat.completions.create(model="reportr", messages=messages)
-    return response.choices[0].message.content
+    
+    console = Console()
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Generating AI analysis...", total=None)
+            progress.update(task, description=f"Analyzing directory: {os.path.basename(path)}...")
+            response = client.chat.completions.create(
+                model="reportr", messages=messages, max_tokens=2000, temperature=0.7
+            )
+            main_report = response.choices[0].message.content
+            progress.update(task, description="Directory analysis complete!")
+            return main_report
+    except Exception as e:
+        console.print(f"[red]Error generating AI analysis for {path}: {e}[/red]")
+        return f"Error: Could not analyze directory {path}"
 
 # Main function to be called by the client
 def summarize_details(client, repo_path="."):
