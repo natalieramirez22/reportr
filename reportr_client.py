@@ -80,7 +80,8 @@ def parse_arguments():
 
     # summarize-by-folder subcommand
     summarize_folder_parser = subparsers.add_parser(
-        "summarize-by-folder", help="Summarize the repository using directory-by-directory approach"
+        "summarize-by-folder",
+        help="Summarize the repository using directory-by-directory approach",
     )
     summarize_folder_parser.add_argument(
         "--path",
@@ -91,8 +92,10 @@ def parse_arguments():
 
     # summarize-entire-directory subcommand
     summarize_entire_parser = subparsers.add_parser(
-        "summarize-entire-directory", help="Summarize the repository using the entire structure as JSON context"
+        "summarize-entire-directory",
+        help="Summarize the repository using the entire structure as JSON context",
     )
+
     summarize_entire_parser.add_argument(
         "--path",
         type=str,
@@ -110,36 +113,28 @@ def execute_features(args):
     # create the client
     client = create_client()
 
-    results = []
-
     # if 'progress-report' command is provided, generate a progress report
     if args.command == "progress-report":
-        report = create_progress_report(
+        create_progress_report(
             client,
             days_back=args.days,
             contributor_filter=args.username,
-            include_contributor_summaries=args.detailed,
             branch=args.branch,
+            use_specific_user_prompt=bool(args.username),
         )
-        results.append(("Progress Report", report))
 
     # if 'generate-readme' command is provided, generate a README file
     elif args.command == "generate-readme":
         readme = generate_readme(client)
         write_to_readme_file(readme)
-        results.append(("README", readme))
 
     # if 'summarize-by-folder' command is provided, summarize using directory-by-directory approach
     elif args.command == "summarize-by-folder":
-        summary = summarize_by_folder(client, repo_path=args.path)
-        results.append(("Repository Directory Summary", summary))
-    
+        summarize_by_folder(client, repo_path=args.path)
+
     # if 'summarize-entire-directory' command is provided, summarize using JSON structure
     elif args.command == "summarize-entire-directory":
-        summary = summarize_entire_directory(client, repo_path=args.path)
-        results.append(("Repository JSON Structure Summary", summary))
-
-    return results
+        summarize_entire_directory(client, repo_path=args.path)
 
 
 def main():
@@ -158,6 +153,7 @@ def main():
 
     # execute the requested features
     execute_features(args)
+
 
 if __name__ == "__main__":
     main()

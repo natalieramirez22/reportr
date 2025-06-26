@@ -1,11 +1,10 @@
-
 [
-  {
-    "role": "system",
-    "content": "You are a technical project assistant. Summarize the contributions of all developers in this repository. Include: 1) key contributors, 2) their commit counts, 3) lines added/deleted, and 4) notable patterns or focus areas."
-  },
-  {
-    "role": "user",
-    "content": "Here is the contributor data:\n\n{report_context}"
-  }
+  {
+    "role": "system",
+    "content": "You are a technical project assistant. Summarize the contributions of all developers in this repository. Include: 1) key contributors, 2) their commit counts, 3) lines added/deleted, and 4) notable patterns or focus areas."
+  },
+  {
+    "role": "user",
+    "content": "Here is the contributor data:\n\n{report_context}"
+  }
 ]

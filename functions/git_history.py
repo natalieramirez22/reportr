@@ -273,8 +273,6 @@ def get_git_history(repo_path=".", days_back=30, contributor_filter=None, branch
             "repository_structure": get_repository_structure(repo_path),
         }
 
-        # console.print(f"History: {history}")
-
         return history
 
     except Exception as e:
