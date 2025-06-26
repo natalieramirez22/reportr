@@ -40,10 +40,13 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
             Examples:
-            python reportr_client.py progress-report
             python reportr_client.py generate-readme
             python reportr_client.py summarize-details --path /path/to/repo
             python reportr_client.py summarize-overviews --path /path/to/repo
+            python reportr_client.py progress-report --username "msft-alias"
+            python reportr_client.py progress-report --days 60 --detailed
+            python reportr_client.py progress-report --branch "develop"
+            python reportr_client.py progress-report --branch "feature/new-feature" --username "dev1" --username "dev2"
         """,
     )
 
@@ -69,6 +72,12 @@ def parse_arguments():
         "--detailed", action="store_true", help="Include detailed contributor summaries"
     )
 
+    progress_parser.add_argument(
+        "--branch",
+        type=str,
+        help="Specify which branch to analyze (default: tries main, then master, then all branches)",
+    )
+
     # generate-readme subcommand
     readme_parser = subparsers.add_parser(
         "generate-readme", help="Generate a README file for the current repository"
@@ -85,7 +94,7 @@ def parse_arguments():
         help="Path to the local repository or directory to summarize (default: current directory)",
     )
 
-    # summarize-entire-directory subcommand
+    # summarize-overview subcommand
     summarize_entire_parser = subparsers.add_parser(
         "summarize-overview", help="Summarize the repository overview and structure"
     )
@@ -115,6 +124,7 @@ def execute_features(args):
             days_back=args.days,
             contributor_filter=args.username,
             include_contributor_summaries=args.detailed,
+            branch=args.branch,
         )
         results.append(("Progress Report", report))
 

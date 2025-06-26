@@ -1,169 +1,148 @@
 import os
 import json
-from git import Repo
-from datetime import datetime, timedelta
+import re
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn
+
+from functions.git_history import get_git_history
+
+# initialize rich console
+console = Console()
 
 
-def get_git_history(repo_path=".", days_back=30, contributor_filter=None):
+def format_markdown_to_rich(markdown_text: str) -> str:
     """
-    Extract git history information from the repository
-    Args:
-        repo_path: Path to the repository
-        days_back: Number of days to look back (0 for all time)
-        contributor_filter: Optional list of contributor names to filter by
+    Convert markdown formatting to Rich text formatting
     """
-    try:
-        repo = Repo(repo_path)
+    if not markdown_text:
+        return markdown_text
 
-        # Get commits from the last N days
-        since_date = datetime.now() - timedelta(days=days_back)
-        commits = list(repo.iter_commits("main", since=since_date))
+    # Convert markdown to Rich formatting
+    formatted_text = markdown_text
 
-        if not commits:
-            # If no commits in main, try master branch
-            commits = list(repo.iter_commits("master", since=since_date))
+    # Bold text: **text** or __text__ -> [bold]text[/bold]
+    formatted_text = re.sub(r"\*\*(.*?)\*\*", r"[bold]\1[/bold]", formatted_text)
+    formatted_text = re.sub(r"__(.*?)__", r"[bold]\1[/bold]", formatted_text)
 
-        if not commits:
-            # If still no commits, get all commits
-            commits = list(repo.iter_commits())
+    # Italic text: *text* or _text_ -> [italic]text[/italic]
+    formatted_text = re.sub(r"\*(.*?)\*", r"[italic]\1[/italic]", formatted_text)
+    formatted_text = re.sub(r"_(.*?)_", r"[italic]\1[/italic]", formatted_text)
 
-        # Collect commit information
-        commit_data = []
-        contributors = {}
+    # Code blocks: `code` -> [code]code[/code]
+    formatted_text = re.sub(r"`([^`]+)`", r"[code]\1[/code]", formatted_text)
 
-        for commit in commits:
-            # Skip merge commits for cleaner analysis
-            if len(commit.parents) > 1:
-                continue
-
-            author_name = commit.author.name
-            author_email = commit.author.email
-
-            # Filter by contributor if specified
-            if contributor_filter and author_name not in contributor_filter:
-                continue
-
-            commit_date = datetime.fromtimestamp(commit.committed_date)
-            commit_message = commit.message.strip()
-
-            # Count contributions per author
-            if author_name not in contributors:
-                contributors[author_name] = {
-                    "email": author_email,
-                    "commits": 0,
-                    "lines_added": 0,
-                    "lines_deleted": 0,
-                    "files_changed": 0,
-                    "commit_messages": [],
-                }
-
-            contributors[author_name]["commits"] += 1
-            contributors[author_name]["commit_messages"].append(commit_message)
-
-            # Get stats for this commit
-            lines_added = 0
-            lines_deleted = 0
-            files_changed = 0
-            try:
-                stats = commit.stats
-                lines_added = stats.total["insertions"]
-                lines_deleted = stats.total["deletions"]
-                files_changed = len(stats.files)
-                contributors[author_name]["lines_added"] += lines_added
-                contributors[author_name]["lines_deleted"] += lines_deleted
-                contributors[author_name]["files_changed"] += files_changed
-            except:
-                pass
-
-            commit_data.append(
-                {
-                    "hash": commit.hexsha[:8],
-                    "author": author_name,
-                    "date": commit_date.strftime("%Y-%m-%d %H:%M:%S"),
-                    "message": commit_message,
-                    "lines_added": lines_added,
-                    "lines_deleted": lines_deleted,
-                    "files_changed": files_changed,
-                }
-            )
-
-        return {
-            "repo_name": (
-                str(repo.working_dir).split("/")[-1] if repo.working_dir else "Unknown"
-            ),
-            "total_commits": len(commit_data),
-            "contributors": contributors,
-            "commits": commit_data,
-            "period": f"Last {days_back} days" if days_back > 0 else "All time",
-            "filtered_by": (
-                contributor_filter if contributor_filter else "All contributors"
-            ),
-        }
-
-    except Exception as e:
-        print(f"Error accessing git repository: {e}")
-        return None
-
-
-def create_contributor_summary(client, git_data, contributor_name):
-    """
-    Create a detailed summary for a specific contributor
-    """
-    if contributor_name not in git_data["contributors"]:
-        return f"Contributor '{contributor_name}' not found in the repository."
-
-    contributor_data = git_data["contributors"][contributor_name]
-    contributor_commits = [
-        c for c in git_data["commits"] if c["author"] == contributor_name
-    ]
-
-    summary_context = f"""
-    Contributor Analysis: {contributor_name}
-    Email: {contributor_data['email']}
-    Period: {git_data['period']}
-    
-    Summary Statistics:
-    - Total Commits: {contributor_data['commits']}
-    - Lines Added: {contributor_data['lines_added']}
-    - Lines Deleted: {contributor_data['lines_deleted']}
-    - Files Changed: {contributor_data['files_changed']}
-    - Net Lines: {contributor_data['lines_added'] - contributor_data['lines_deleted']}
-    
-    Recent Commit Messages:
-    """
-
-    for commit in contributor_commits[:15]:  # Show last 15 commits
-        summary_context += f"""
-    - {commit['date']} ({commit['hash']})
-      {commit['message']}
-      +{commit['lines_added']} -{commit['lines_deleted']} lines, {commit['files_changed']} files
-    """
-
-    # Create a specialized prompt for contributor analysis
-    contributor_prompt = [
-        {
-            "role": "system",
-            "content": "You are an expert at analyzing developer contributions. Create a detailed, professional summary of a contributor's work that includes: 1. Overall contribution assessment 2. Development patterns and focus areas 3. Code quality indicators (based on commit patterns) 4. Key achievements and notable changes 5. Recommendations or observations about their work style. Write in clear, professional language.",
-        },
-        {
-            "role": "user",
-            "content": f"Analyze this contributor's work and create a detailed summary:\n\n{summary_context}",
-        },
-    ]
-
-    response = client.chat.completions.create(
-        model="reportr", messages=contributor_prompt, max_tokens=1500, temperature=0.7
+    # Headers: # Header -> [bold cyan]Header[/bold cyan]
+    formatted_text = re.sub(
+        r"^### (.*?)$", r"[bold cyan]\1[/bold cyan]", formatted_text, flags=re.MULTILINE
+    )
+    formatted_text = re.sub(
+        r"^## (.*?)$", r"[bold blue]\1[/bold blue]", formatted_text, flags=re.MULTILINE
+    )
+    formatted_text = re.sub(
+        r"^# (.*?)$",
+        r"[bold magenta]\1[/bold magenta]",
+        formatted_text,
+        flags=re.MULTILINE,
     )
 
-    return response.choices[0].message.content
+    # Lists: - item -> • item
+    formatted_text = re.sub(r"^- (.*?)$", r"• \1", formatted_text, flags=re.MULTILINE)
+
+    # Emphasis on key metrics: numbers and percentages
+    formatted_text = re.sub(r"(\d+%)", r"[bold green]\1[/bold green]", formatted_text)
+    formatted_text = re.sub(
+        r"(\d+ commits)", r"[bold yellow]\1[/bold yellow]", formatted_text
+    )
+    formatted_text = re.sub(
+        r"(\d+ files)", r"[bold blue]\1[/bold blue]", formatted_text
+    )
+
+    return formatted_text
 
 
+# !GIT HISTORY HELPER FUNCTIONS
+def create_repository_overview(git_data, branch):
+    """Create a Rich panel for repository overview"""
+    repo_overview = Panel(
+        f"[bold]Repository:[/bold] {git_data['repo_name']}\n"
+        f"[bold]Branch:[/bold] {branch}\n"
+        f"[bold]Analysis Period:[/bold] {git_data['period']}\n"
+        f"[bold]Filter:[/bold] {git_data['filtered_by']}\n"
+        f"[bold]Total Commits:[/bold] {git_data['total_commits']}",
+        title="Repository Overview",
+        border_style="cyan",
+        padding=(1, 2),
+    )
+
+    return repo_overview
+
+
+def create_contributor_summary(git_data):
+    """Create a Rich table for contributors summary"""
+    contributors_table = Table(title="Contributors Summary", title_justify="left")
+    contributors_table.add_column("Contributor", style="cyan", no_wrap=True)
+    contributors_table.add_column("Commits", style="magenta", justify="right")
+    contributors_table.add_column("Lines Added", style="green", justify="right")
+    contributors_table.add_column("Lines Deleted", style="red", justify="right")
+    contributors_table.add_column("Files Changed", style="yellow", justify="right")
+    contributors_table.add_column("Net Lines", style="blue", justify="right")
+
+    for author, stats in git_data["contributors"].items():
+        net_lines = stats["lines_added"] - stats["lines_deleted"]
+        net_color = "green" if net_lines >= 0 else "red"
+        contributors_table.add_row(
+            author,
+            str(stats["commits"]),
+            f"+{stats['lines_added']}",
+            f"-{stats['lines_deleted']}",
+            str(stats["files_changed"]),
+            f"[{net_color}]{net_lines:+}[/{net_color}]",
+        )
+
+    return contributors_table
+
+
+def create_commits_table(git_data, max_commits=10):
+    """Create a Rich table for recent commits"""
+    if not git_data["commits"]:
+        return None
+
+    commits_table = Table(
+        title=f"Recent Commits (Last {max_commits})", title_justify="left"
+    )
+    commits_table.add_column("Date", style="cyan", no_wrap=True)
+    commits_table.add_column("Author", style="magenta")
+    commits_table.add_column("Hash", style="yellow", no_wrap=True)
+    commits_table.add_column("Message", style="white")
+    commits_table.add_column("Changes", style="blue", justify="right")
+
+    for commit in git_data["commits"][:max_commits]:
+        changes = f"+{commit['lines_added']} -{commit['lines_deleted']} ({commit['files_changed']} files)"
+        commits_table.add_row(
+            commit["date"][:10],  # Just the date part
+            commit["author"],
+            commit["hash"],
+            (
+                commit["message"][:50] + "..."
+                if len(commit["message"]) > 50
+                else commit["message"]
+            ),
+            changes,
+        )
+
+    return commits_table
+
+
+# ! MAIN FUNCTION
 def create_progress_report(
     client,
     repo_path=".",
     days_back=30,
     contributor_filter=None,
     include_contributor_summaries=False,
+    branch=None,
 ):
     """
     Create a comprehensive progress report for a git repository
@@ -173,44 +152,53 @@ def create_progress_report(
         days_back: Number of days to look back (0 for all time)
         contributor_filter: Optional list of contributor names to filter by
         include_contributor_summaries: Whether to include detailed summaries for each contributor
+        branch: Optional branch name to analyze
     """
-    print("Analyzing git repository...")
-    git_data = get_git_history(repo_path, days_back, contributor_filter)
+    console.print("[bold blue]🚀 Generating Progress Report[/bold blue]")
+
+    git_data = get_git_history(repo_path, days_back, contributor_filter, branch)
+    # console.print(f"Git Data: {git_data}")
 
     if not git_data:
-        print("Could not analyze git repository. Make sure you're in a git repository.")
+        console.print(
+            "[red]❌ Could not analyze git repository. Make sure you're in a git repository.[/red]"
+        )
         return
 
-    # Prepare the data for the LLM
+    # create repository overview
+    repo_overview = create_repository_overview(git_data, branch)
+    console.print(repo_overview)
+    console.print("\n")
+
+    # create contributor summary
+    contributor_summary = create_contributor_summary(git_data)
+    console.print(contributor_summary)
+    console.print("\n")
+
+    # create and display the commit history
+    commit_history = create_commits_table(git_data, max_commits=20)
+    console.print(commit_history)
+    console.print("\n")
+
+    # prepare the data for the LLM call
+    branch_info = f" (Branch: {branch})" if branch else ""
     report_context = f"""
-        Repository: {git_data['repo_name']}
+        Repository: {git_data['repo_name']}{branch_info}
         Analysis Period: {git_data['period']}
-        Filter: {git_data['filtered_by']}
+        Filter: {git_data['contributor']}
         Total Commits: {git_data['total_commits']}
-
-        Contributors ({len(git_data['contributors'])}):
     """
-
-    for author, stats in git_data["contributors"].items():
-        report_context += f"""
-        - {author} ({stats['email']})
-        - Commits: {stats['commits']}
-        - Lines Added: {stats['lines_added']}
-        - Lines Deleted: {stats['lines_deleted']}
-        - Files Changed: {stats['files_changed']}
-        - Net Lines: {stats['lines_added'] - stats['lines_deleted']}
-        """
 
     report_context += "\nRecent Commits:\n"
     for commit in git_data["commits"][:20]:  # Show last 20 commits
         report_context += f"""
-- {commit['date']} - {commit['author']} ({commit['hash']})
-  {commit['message']}
-  +{commit['lines_added']} -{commit['lines_deleted']} lines, {commit['files_changed']} files
-"""
+            - {commit['date']} - {commit['author']} ({commit['hash']})
+            {commit['message']}
+            +{commit['lines_added']} -{commit['lines_deleted']} lines, {commit['files_changed']} files, diffs: {commit['diffs']}
+        """
 
     # Load the prompt template
-    prompt_path = os.path.join(os.path.dirname(__file__), "prompt.txt")
+    prompt_path = os.path.join(os.path.dirname(__file__), "prompts/specific_user.txt")
     messages = None
     try:
         with open(prompt_path, "r") as f:
@@ -225,27 +213,53 @@ def create_progress_report(
         prompt_template = prompt_template.replace("{report_context}", escaped_context)
         messages = json.loads(prompt_template)
     except Exception as e:
-        print(f"Error loading prompt template: {e}")
+        console.print(f"[red]Error loading prompt template: {e}[/red]")
         return
 
-    # Generate the main report using the LLM
-    response = client.chat.completions.create(
-        model="reportr", messages=messages, max_tokens=2000, temperature=0.7
-    )
+    # console.print(f"LLM Message: {messages}")
 
-    main_report = response.choices[0].message.content
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Generating AI analysis...", total=None)
+            progress.update(task, description="Generating AI analysis...")
+
+            response = client.chat.completions.create(
+                model="reportr", messages=messages, max_tokens=2000, temperature=0.7
+            )
+
+            main_report = response.choices[0].message.content
+
+            progress.update(task, description="AI analysis complete!")
+    except Exception as e:
+        console.print(f"[red]Error generating AI analysis: {e}[/red]")
+        return
+
+    # Format the markdown in the AI-generated report
+    formatted_report = format_markdown_to_rich(main_report)
+
+    # display the main report in a panel
+    main_report_panel = Panel(
+        formatted_report,
+        title="📊 AI-Generated Progress Report",
+        border_style="blue",
+        padding=(1, 2),
+    )
+    console.print(main_report_panel)
 
     # Add contributor summaries if requested
     if include_contributor_summaries and git_data["contributors"]:
-        main_report += (
-            "\n\n" + "=" * 50 + "\nDETAILED CONTRIBUTOR SUMMARIES\n" + "=" * 50 + "\n"
+        console.print(
+            "\n[bold cyan]🔍 Generating Detailed Contributor Summaries...[/bold cyan]"
         )
 
         for contributor_name in git_data["contributors"].keys():
-            contributor_summary = create_contributor_summary(
-                client, git_data, contributor_name
-            )
+            contributor_summary = create_contributor_summary(git_data)
             main_report += f"\n\n{contributor_summary}\n"
             main_report += "-" * 50
 
+    console.print("[bold green]✅ Progress report generation complete![/bold green]")
     return main_report
