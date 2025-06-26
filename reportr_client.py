@@ -2,15 +2,16 @@ import os
 import argparse
 from openai import AzureOpenAI
 from dotenv import load_dotenv
+from rich.console import Console
+from rich.panel import Panel
 from features.progress_report.progress_report import create_progress_report
 from features.generate_readme.generate_readme import (
     generate_readme,
     write_to_readme_file,
 )
 from features.summarize_repo.summarize_repo import (
-    summarize_repo,
-    save_repo_structure_to_json,
-    summarize_repo_with_json_structure,
+    summarize_by_folder,
+    summarize_entire_directory,
 )
 
 load_dotenv()
@@ -37,9 +38,10 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
             Examples:
-            python reportr_client.py --progress-report
-            python reportr_client.py --generate-readme
-            python reportr_client.py --summarize-repo --path /path/to/repo
+            python reportr_client.py progress-report
+            python reportr_client.py generate-readme
+            python reportr_client.py summarize-by-folder --path /path/to/repo
+            python reportr_client.py summarize-entire-directory --path /path/to/repo
         """,
     )
 
@@ -70,42 +72,26 @@ def parse_arguments():
         "generate-readme", help="Generate a README file for the current repository"
     )
 
-    # 'summarize-repo' arg to summarize the purpose of the current repository
-    parser.add_argument(
-        "--summarize-repo",
-        action="store_true",
-        help="Summarize the purpose of the current repository (directory-by-directory approach)",
+    # summarize-by-folder subcommand
+    summarize_folder_parser = subparsers.add_parser(
+        "summarize-by-folder", help="Summarize the repository using directory-by-directory approach"
     )
-
-    # 'summarize-repo-structure' arg to summarize using formatted structure
-    parser.add_argument(
-        "--summarize-repo-structure",
-        action="store_true",
-        help="Summarize the repository using the entire structure as formatted context",
-    )
-
-    # 'summarize-repo-json' arg to summarize using JSON structure
-    parser.add_argument(
-        "--summarize-repo-json",
-        action="store_true",
-        help="Summarize the repository using the raw JSON structure (most efficient for large repos)",
-    )
-
-    # 'path' argument to specify the local path to the repository or directory
-    parser.add_argument(
+    summarize_folder_parser.add_argument(
         "--path",
         type=str,
         default=".",
         help="Path to the local repository or directory to summarize (default: current directory)",
     )
 
-    # 'save-json' argument to save repository structure to JSON file
-    parser.add_argument(
-        "--save-json",
+    # summarize-entire-directory subcommand
+    summarize_entire_parser = subparsers.add_parser(
+        "summarize-entire-directory", help="Summarize the repository using the entire structure as JSON context"
+    )
+    summarize_entire_parser.add_argument(
+        "--path",
         type=str,
-        help="Save repository structure to JSON file (specify filename or use default: repo_structure.json)",
-        nargs="?",
-        const="repo_structure.json",
+        default=".",
+        help="Path to the local repository or directory to summarize (default: current directory)",
     )
 
     return parser.parse_args()
@@ -136,22 +122,15 @@ def execute_features(args):
         write_to_readme_file(readme)
         results.append(("README", readme))
 
-    # if 'summarize-repo' is provided, summarize the purpose of the current repository
-    if args.summarize_repo:
-        summary = summarize_repo(client, repo_path=args.path)
-        results.append(("Repository Summary", summary))
-
-    # if 'summarize-repo-json' is provided, summarize using JSON structure
-    if args.summarize_repo_json:
-        summary = summarize_repo_with_json_structure(client, repo_path=args.path)
+    # if 'summarize-by-folder' command is provided, summarize using directory-by-directory approach
+    elif args.command == "summarize-by-folder":
+        summary = summarize_by_folder(client, repo_path=args.path)
+        results.append(("Repository Directory Summary", summary))
+    
+    # if 'summarize-entire-directory' command is provided, summarize using JSON structure
+    elif args.command == "summarize-entire-directory":
+        summary = summarize_entire_directory(client, repo_path=args.path)
         results.append(("Repository JSON Structure Summary", summary))
-
-    # if 'save-json' is provided, save repository structure to JSON file
-    if args.save_json:
-        output_file = save_repo_structure_to_json(args.path, args.save_json)
-        results.append(
-            ("JSON Structure", f"Repository structure saved to: {output_file}")
-        )
 
     return results
 
@@ -161,16 +140,6 @@ def main():
 
     # parse the arguments
     args = parse_arguments()
-
-    # if no command provided but summarize-repo flag is used, execute it
-    if not args.command and (
-        args.summarize_repo or args.summarize_repo_json or args.save_json
-    ):
-        results = execute_features(args)
-        # print the results
-        for title, content in results:
-            print(f"{title.upper()}\n\n{content}\n\n\n\n")
-        return
 
     # if no command provided, show help
     if not args.command:
@@ -183,9 +152,23 @@ def main():
     # execute the requested features
     results = execute_features(args)
 
-    # print the results
+    # Create Rich console for beautiful output
+    console = Console()
+
+    # print the results with Rich formatting
     for title, content in results:
-        print(f"{title.upper()}\n\n{content}\n\n\n\n")
+        # Create a styled panel for each result with better width management
+        panel = Panel(
+            content,
+            title=f"[bold blue]{title}[/bold blue]",
+            title_align="left",
+            border_style="blue",
+            padding=(1, 2),
+            expand=False,
+            width=min(120, console.size.width - 4)  # Responsive width with max limit
+        )
+        console.print(panel)
+        console.print()  # Add some spacing between panels
 
 
 if __name__ == "__main__":
