@@ -152,9 +152,15 @@ def summarize_entire_directory(client, repo_path="."):
             processed_lines.append("")
             continue
             
-        # Color code numbered headers (1., 2., etc.) - these are section headers - CHECK FIRST
+        # Check for markdown headers FIRST (###, ##, #) - these take precedence
+        if line.startswith(('### ', '## ', '# ')):
+            # Remove the markdown symbols and format as a main header
+            header_text = line.lstrip('#').strip()
+            formatted_line = format_markdown_text(header_text)
+            processed_lines.append(f"\n[bold sky_blue1]{formatted_line}[/bold sky_blue1]")
+        # Color code numbered headers (1., 2., etc.) - these are section headers - CHECK SECOND
         # Only treat as section headers if they are at the start and don't have too much text after
-        if (line.startswith(('1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.')) and 
+        elif (line.startswith(('1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.')) and 
             len(line.split()) <= 8 and ':' not in line):
             formatted_line = format_markdown_text(line)
             processed_lines.append(f"\n[bold green]{formatted_line}[/bold green]")
@@ -166,23 +172,25 @@ def summarize_entire_directory(client, repo_path="."):
             processed_lines.append(f"\n[bold sky_blue1]{formatted_line}[/bold sky_blue1]")
         # Color code bullet points - handle various indentation levels but normalize to bullet
         elif line.startswith(('•', '-', '*')) or original_line.lstrip().startswith(('•', '-', '*')):
-            # Determine indentation level
+            # Determine indentation level from original line
             indent_level = len(original_line) - len(original_line.lstrip())
             
             # Remove the original bullet character and get the text
             text_content = line[1:].strip() if line.startswith(('•', '-', '*')) else original_line.lstrip()[1:].strip()
             formatted_line = format_markdown_text(text_content)
             
-            if indent_level == 0:
-                # Top-level bullet
-                processed_lines.append(f"    • [white]{formatted_line}[/white]")
-            elif indent_level <= 4:
-                # First level indent - normal white
-                processed_lines.append(f"      • [white]{formatted_line}[/white]")
-            else:
-                # Deeper indentation - dimmed
+            # Most bullets should be normal white - only dim if very deeply nested (8+ spaces)
+            if indent_level >= 8:
+                # Very deeply indented - dimmed
                 spaces = ' ' * (indent_level + 2)
                 processed_lines.append(f"{spaces}• [dim white]{formatted_line}[/dim white]")
+            elif indent_level > 0:
+                # Some indentation - normal white with appropriate spacing
+                spaces = ' ' * (indent_level + 2)
+                processed_lines.append(f"{spaces}• [white]{formatted_line}[/white]")
+            else:
+                # Top-level bullet - normal white
+                processed_lines.append(f"    • [white]{formatted_line}[/white]")
         # Handle numbered steps/items within sections (longer numbered lines or indented)
         elif (line.startswith(('1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.')) or 
               original_line.lstrip().startswith(('1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.'))):
