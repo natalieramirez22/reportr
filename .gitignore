@@ -1,2 +1,10 @@
+#pycache
+features/generate_readme/__pycache__/
+features/progress_report/__pycache__/
+features/summarize_repo/__pycache__/
+
+#env
 .env
+
+#venv
 venv/

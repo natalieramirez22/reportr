@@ -13,7 +13,7 @@ A Python tool that uses Azure OpenAI to generate comprehensive progress reports 
 
 ## Project Structure
 
-```
+``` txt
 reportr/
 ├── reportr_client.py          # Main client application
 ├── requirements.txt           # Python dependencies
