@@ -39,9 +39,10 @@ def parse_arguments():
         epilog="""
             Examples:
             python reportr_client.py progress-report
-            python reportr_client.py generate-readme
-            python reportr_client.py summarize-by-folder --path /path/to/repo
-            python reportr_client.py summarize-entire-directory --path /path/to/repo
+            python reportr_client.py progress-report --username "msft-alias"
+            python reportr_client.py progress-report --days 60 --detailed
+            python reportr_client.py progress-report --branch "develop"
+            python reportr_client.py progress-report --branch "feature/new-feature" --username "dev1" --username "dev2"
         """,
     )
 
@@ -65,6 +66,11 @@ def parse_arguments():
     )
     progress_parser.add_argument(
         "--detailed", action="store_true", help="Include detailed contributor summaries"
+    )
+    progress_parser.add_argument(
+        "--branch",
+        type=str,
+        help="Specify which branch to analyze (default: tries main, then master, then all branches)",
     )
 
     # generate-readme subcommand
@@ -113,6 +119,7 @@ def execute_features(args):
             days_back=args.days,
             contributor_filter=args.username,
             include_contributor_summaries=args.detailed,
+            branch=args.branch,
         )
         results.append(("Progress Report", report))
 
@@ -150,26 +157,7 @@ def main():
         return
 
     # execute the requested features
-    results = execute_features(args)
-
-    # Create Rich console for beautiful output
-    console = Console()
-
-    # print the results with Rich formatting
-    for title, content in results:
-        # Create a styled panel for each result with better width management
-        panel = Panel(
-            content,
-            title=f"[bold blue]{title}[/bold blue]",
-            title_align="left",
-            border_style="blue",
-            padding=(1, 2),
-            expand=False,
-            width=min(120, console.size.width - 4)  # Responsive width with max limit
-        )
-        console.print(panel)
-        console.print()  # Add some spacing between panels
-
+    execute_features(args)
 
 if __name__ == "__main__":
     main()
