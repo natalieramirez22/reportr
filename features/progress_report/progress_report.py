@@ -33,16 +33,22 @@ def format_markdown_to_rich(markdown_text: str) -> str:
     # Code blocks: `code` -> [code]code[/code]
     formatted_text = re.sub(r"`([^`]+)`", r"[code]\1[/code]", formatted_text)
 
-    # Headers: # Header -> [bold cyan]Header[/bold cyan]
+    # Headers: # Header -> [bold orange1]Header[/bold orange1]
     formatted_text = re.sub(
-        r"^### (.*?)$", r"[bold cyan]\1[/bold cyan]", formatted_text, flags=re.MULTILINE
+        r"^### (.*?)$",
+        r"[bold orange1]\1[/bold orange1]",
+        formatted_text,
+        flags=re.MULTILINE,
     )
     formatted_text = re.sub(
-        r"^## (.*?)$", r"[bold blue]\1[/bold blue]", formatted_text, flags=re.MULTILINE
+        r"^## (.*?)$",
+        r"[bold orange1]\1[/bold orange1]",
+        formatted_text,
+        flags=re.MULTILINE,
     )
     formatted_text = re.sub(
         r"^# (.*?)$",
-        r"[bold magenta]\1[/bold magenta]",
+        r"[bold orange1]\1[/bold orange1]",
         formatted_text,
         flags=re.MULTILINE,
     )
@@ -51,12 +57,14 @@ def format_markdown_to_rich(markdown_text: str) -> str:
     formatted_text = re.sub(r"^- (.*?)$", r"• \1", formatted_text, flags=re.MULTILINE)
 
     # Emphasis on key metrics: numbers and percentages
-    formatted_text = re.sub(r"(\d+%)", r"[bold green]\1[/bold green]", formatted_text)
     formatted_text = re.sub(
-        r"(\d+ commits)", r"[bold yellow]\1[/bold yellow]", formatted_text
+        r"(\d+%)", r"[bold spring_green1]\1[/bold spring_green1]", formatted_text
     )
     formatted_text = re.sub(
-        r"(\d+ files)", r"[bold blue]\1[/bold blue]", formatted_text
+        r"(\d+ commits)", r"[bold plum1]\1[/bold plum1]", formatted_text
+    )
+    formatted_text = re.sub(
+        r"(\d+ files)", r"[bold sky_blue2]\1[/bold sky_blue2]", formatted_text
     )
 
     return formatted_text
@@ -72,7 +80,7 @@ def create_repository_overview(git_data, branch):
         f"[bold]Filter:[/bold] {git_data['filtered_by']}\n"
         f"[bold]Total Commits:[/bold] {git_data['total_commits']}",
         title="Repository Overview",
-        border_style="cyan",
+        border_style="orange1",
         padding=(1, 2),
     )
 
@@ -82,16 +90,16 @@ def create_repository_overview(git_data, branch):
 def create_contributor_summary(git_data):
     """Create a Rich table for contributors summary"""
     contributors_table = Table(title="Contributors Summary", title_justify="left")
-    contributors_table.add_column("Contributor", style="cyan", no_wrap=True)
-    contributors_table.add_column("Commits", style="magenta", justify="right")
-    contributors_table.add_column("Lines Added", style="green", justify="right")
+    contributors_table.add_column("Contributor", style="light_pink1", no_wrap=True)
+    contributors_table.add_column("Commits", style="plum1", justify="right")
+    contributors_table.add_column("Lines Added", style="spring_green1", justify="right")
     contributors_table.add_column("Lines Deleted", style="red", justify="right")
-    contributors_table.add_column("Files Changed", style="yellow", justify="right")
-    contributors_table.add_column("Net Lines", style="blue", justify="right")
+    contributors_table.add_column("Files Changed", style="sky_blue2", justify="right")
+    contributors_table.add_column("Net Lines", style="orange1", justify="right")
 
     for author, stats in git_data["contributors"].items():
         net_lines = stats["lines_added"] - stats["lines_deleted"]
-        net_color = "green" if net_lines >= 0 else "red"
+        net_color = "spring_green1" if net_lines >= 0 else "red"
         contributors_table.add_row(
             author,
             str(stats["commits"]),
@@ -112,11 +120,11 @@ def create_commits_table(git_data, max_commits=10):
     commits_table = Table(
         title=f"Recent Commits (Last {max_commits})", title_justify="left"
     )
-    commits_table.add_column("Date", style="cyan", no_wrap=True)
-    commits_table.add_column("Author", style="magenta")
-    commits_table.add_column("Hash", style="yellow", no_wrap=True)
+    commits_table.add_column("Date", style="sky_blue2", no_wrap=True)
+    commits_table.add_column("Author", style="light_pink1")
+    commits_table.add_column("Hash", style="plum1", no_wrap=True)
     commits_table.add_column("Message", style="white")
-    commits_table.add_column("Changes", style="blue", justify="right")
+    commits_table.add_column("Changes", style="orange1", justify="right")
 
     for commit in git_data["commits"][:max_commits]:
         changes = f"+{commit['lines_added']} -{commit['lines_deleted']} ({commit['files_changed']} files)"
@@ -154,7 +162,7 @@ def create_progress_report(
         include_contributor_summaries: Whether to include detailed summaries for each contributor
         branch: Optional branch name to analyze
     """
-    console.print("[bold blue]🚀 Generating Progress Report[/bold blue]")
+    console.print("[bold orange1]🚀 Generating Progress Report[/bold orange1]")
 
     git_data = get_git_history(repo_path, days_back, contributor_filter, branch)
     # console.print(f"Git Data: {git_data}")
@@ -245,7 +253,7 @@ def create_progress_report(
     main_report_panel = Panel(
         formatted_report,
         title="📊 AI-Generated Progress Report",
-        border_style="blue",
+        border_style="orange1",
         padding=(1, 2),
     )
     console.print(main_report_panel)
@@ -253,7 +261,7 @@ def create_progress_report(
     # Add contributor summaries if requested
     if include_contributor_summaries and git_data["contributors"]:
         console.print(
-            "\n[bold cyan]🔍 Generating Detailed Contributor Summaries...[/bold cyan]"
+            "\n[bold sky_blue2]🔍 Generating Detailed Contributor Summaries...[/bold sky_blue2]"
         )
 
         for contributor_name in git_data["contributors"].keys():
@@ -261,5 +269,7 @@ def create_progress_report(
             main_report += f"\n\n{contributor_summary}\n"
             main_report += "-" * 50
 
-    console.print("[bold green]✅ Progress report generation complete![/bold green]")
+    console.print(
+        "[bold spring_green1]✅ Progress report generation complete![/bold spring_green1]"
+    )
     return main_report

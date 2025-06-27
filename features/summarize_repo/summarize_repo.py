@@ -8,6 +8,7 @@ from rich.tree import Tree
 from rich.text import Text
 from rich.markdown import Markdown
 
+
 # build a nested dictionary structure of the repository
 # used for both summarize_by_folder and summarize_entire_directory functions
 def build_repo_structure(repo_path):
@@ -69,29 +70,24 @@ def build_repo_structure(repo_path):
                     continue
                 # recursively build structure for subdirectories
                 subfolder_content = _build_structure(full_path)
-                repo_content[item] = {
-                    "type": "folder",
-                    "contents": subfolder_content
-                }
+                repo_content[item] = {"type": "folder", "contents": subfolder_content}
             elif os.path.isfile(full_path):
                 # only include files with specified extensions
                 if os.path.splitext(item)[1] in INCLUDED_EXTENSIONS:
                     try:
                         with open(full_path, "r", encoding="utf-8") as file:
                             content = file.read()
-                        repo_content[item] = {
-                            "type": "file",
-                            "content": content
-                        }
+                        repo_content[item] = {"type": "file", "content": content}
                     except Exception as e:
                         repo_content[item] = {
                             "type": "file",
-                            "content": f"# Error reading file: {e}"
+                            "content": f"# Error reading file: {e}",
                         }
 
         return repo_content
 
     return _build_structure(repo_path)
+
 
 def summarize_entire_directory(client, repo_path="."):
     """
@@ -125,118 +121,156 @@ def summarize_entire_directory(client, repo_path="."):
 
     response = client.chat.completions.create(model="reportr", messages=messages)
     raw_summary = response.choices[0].message.content
-    
+
     # Format the response with Rich markup for better presentation
     formatted_parts = []
-    
+
     # Add a decorated header
-    formatted_parts.append("[bold sky_blue1]Repository Analysis Summary[/bold sky_blue1]\n")
-    
+    formatted_parts.append(
+        "[bold sky_blue2]Repository Analysis Summary[/bold sky_blue2]\n"
+    )
+
     # Add repository info
     repo_name = os.path.basename(os.path.abspath(repo_path))
     formatted_parts.append(f"[bold yellow]Repository:[/bold yellow] {repo_name}")
-    formatted_parts.append(f"[bold yellow]Analysis Method:[/bold yellow] Complete JSON Structure Analysis")
+    formatted_parts.append(
+        f"[bold yellow]Analysis Method:[/bold yellow] Complete JSON Structure Analysis"
+    )
     formatted_parts.append(f"[bold yellow]Path:[/bold yellow] {repo_path}\n")
-    
+
     # Add the main summary - use plain text with some basic formatting instead of full markdown
-    formatted_parts.append("[bold sky_blue1]Detailed Analysis:[/bold sky_blue1]")
-     # Process the summary to add some basic formatting with proper line wrapping
-    lines = raw_summary.split('\n')
+    formatted_parts.append("[bold sky_blue2]Detailed Analysis:[/bold sky_blue2]")
+    # Process the summary to add some basic formatting with proper line wrapping
+    lines = raw_summary.split("\n")
     processed_lines = []
 
     for line in lines:
         original_line = line
         line = line.strip()
-        
+
         if not line:
             processed_lines.append("")
             continue
-            
+
         # Check for markdown headers FIRST (###, ##, #) - these take precedence
-        if line.startswith(('### ', '## ', '# ')):
+        if line.startswith(("### ", "## ", "# ")):
             # Remove the markdown symbols and format as a main header
-            header_text = line.lstrip('#').strip()
+            header_text = line.lstrip("#").strip()
             formatted_line = format_markdown_text(header_text)
-            processed_lines.append(f"\n[bold sky_blue1]{formatted_line}[/bold sky_blue1]")
+            processed_lines.append(
+                f"\n[bold sky_blue2]{formatted_line}[/bold sky_blue2]"
+            )
         # Color code numbered headers (1., 2., etc.) - these are section headers - CHECK SECOND
         # Only treat as section headers if they are at the start and don't have too much text after
-        elif (line.startswith(('1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.')) and 
-            len(line.split()) <= 8 and ':' not in line):
+        elif (
+            line.startswith(("1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9."))
+            and len(line.split()) <= 8
+            and ":" not in line
+        ):
             formatted_line = format_markdown_text(line)
             processed_lines.append(f"\n[bold green]{formatted_line}[/bold green]")
         # Check for section headers that might be getting caught as bullets
         # These are important headers that should be styled like main sections
-        elif (line.lower().startswith(('main technologies', 'entry points', 'file organization', 'technologies and patterns', 'getting started')) or
-              (len(line.split()) <= 6 and line.endswith(('Technologies', 'Patterns', 'Started', 'Structure', 'Organization')))):
+        elif line.lower().startswith(
+            (
+                "main technologies",
+                "entry points",
+                "file organization",
+                "technologies and patterns",
+                "getting started",
+            )
+        ) or (
+            len(line.split()) <= 6
+            and line.endswith(
+                ("Technologies", "Patterns", "Started", "Structure", "Organization")
+            )
+        ):
             formatted_line = format_markdown_text(line)
-            processed_lines.append(f"\n[bold sky_blue1]{formatted_line}[/bold sky_blue1]")
+            processed_lines.append(
+                f"\n[bold sky_blue2]{formatted_line}[/bold sky_blue2]"
+            )
         # Color code bullet points - handle various indentation levels but normalize to bullet
-        elif line.startswith(('•', '-', '*')) or original_line.lstrip().startswith(('•', '-', '*')):
+        elif line.startswith(("•", "-", "*")) or original_line.lstrip().startswith(
+            ("•", "-", "*")
+        ):
             # Determine indentation level from original line
             indent_level = len(original_line) - len(original_line.lstrip())
-            
+
             # Remove the original bullet character and get the text
-            text_content = line[1:].strip() if line.startswith(('•', '-', '*')) else original_line.lstrip()[1:].strip()
+            text_content = (
+                line[1:].strip()
+                if line.startswith(("•", "-", "*"))
+                else original_line.lstrip()[1:].strip()
+            )
             formatted_line = format_markdown_text(text_content)
-            
+
             # Most bullets should be normal white - only dim if very deeply nested (8+ spaces)
             if indent_level >= 8:
                 # Very deeply indented - dimmed
-                spaces = ' ' * (indent_level + 2)
-                processed_lines.append(f"{spaces}• [dim white]{formatted_line}[/dim white]")
+                spaces = " " * (indent_level + 2)
+                processed_lines.append(
+                    f"{spaces}• [dim white]{formatted_line}[/dim white]"
+                )
             elif indent_level > 0:
                 # Some indentation - normal white with appropriate spacing
-                spaces = ' ' * (indent_level + 2)
+                spaces = " " * (indent_level + 2)
                 processed_lines.append(f"{spaces}• [white]{formatted_line}[/white]")
             else:
                 # Top-level bullet - normal white
                 processed_lines.append(f"    • [white]{formatted_line}[/white]")
         # Handle numbered steps/items within sections (longer numbered lines or indented)
-        elif (line.startswith(('1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.')) or 
-              original_line.lstrip().startswith(('1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.'))):
+        elif line.startswith(
+            ("1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.")
+        ) or original_line.lstrip().startswith(
+            ("1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.")
+        ):
             # Determine indentation level
             indent_level = len(original_line) - len(original_line.lstrip())
-            
+
             # Extract the numbered content
-            if line.startswith(('1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.')):
+            if line.startswith(("1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.")):
                 # Find the number and get the rest
-                num_end = line.find('.') + 1
+                num_end = line.find(".") + 1
                 number_part = line[:num_end]
                 text_content = line[num_end:].strip()
             else:
                 stripped_line = original_line.lstrip()
-                num_end = stripped_line.find('.') + 1
+                num_end = stripped_line.find(".") + 1
                 number_part = stripped_line[:num_end]
                 text_content = stripped_line[num_end:].strip()
-            
+
             formatted_line = format_markdown_text(text_content)
-            
+
             if indent_level == 0:
                 # Top-level numbered item - make these green to match section headers
-                processed_lines.append(f"    {number_part} [bold green]{formatted_line}[/bold green]")
+                processed_lines.append(
+                    f"    {number_part} [bold green]{formatted_line}[/bold green]"
+                )
             else:
                 # Indented numbered item
-                spaces = ' ' * (indent_level + 2)
-                processed_lines.append(f"{spaces}{number_part} [white]{formatted_line}[/white]")
+                spaces = " " * (indent_level + 2)
+                processed_lines.append(
+                    f"{spaces}{number_part} [white]{formatted_line}[/white]"
+                )
         # Headers that end with colons
-        elif line.endswith(':') and len(line.split()) <= 6:
+        elif line.endswith(":") and len(line.split()) <= 6:
             formatted_line = format_markdown_text(line)
             processed_lines.append(f"[bold yellow]{formatted_line}[/bold yellow]")
         # Color code comments (lines starting with #) in dim text
-        elif line.startswith('#'):
+        elif line.startswith("#"):
             formatted_line = format_markdown_text(line)
             processed_lines.append(f"[dim white]{formatted_line}[/dim white]")
         # Regular text - keep as is but format markdown
         else:
             formatted_line = format_markdown_text(line)
             processed_lines.append(formatted_line)
-    
+
     # Join the processed lines and add to formatted parts
-    formatted_parts.append('\n'.join(processed_lines))
-    
+    formatted_parts.append("\n".join(processed_lines))
+
     # Add some repository statistics
-    formatted_parts.append("\n[bold sky_blue1]Repository Statistics:[/bold sky_blue1]")
-    
+    formatted_parts.append("\n[bold sky_blue2]Repository Statistics:[/bold sky_blue2]")
+
     # Count files and folders
     def count_items(structure):
         files = 0
@@ -251,13 +285,14 @@ def summarize_entire_directory(client, repo_path="."):
                     files += sub_files
                     folders += sub_folders
         return files, folders
-    
+
     total_files, total_folders = count_items(repo_structure)
     formatted_parts.append(f"├── [green]Total Files:[/green] {total_files}")
     formatted_parts.append(f"├── [yellow]Total Directories:[/yellow] {total_folders}")
-    
+
     # Count file types
     file_types = {}
+
     def count_file_types(structure):
         for name, content in structure.items():
             if isinstance(content, dict):
@@ -266,14 +301,17 @@ def summarize_entire_directory(client, repo_path="."):
                     file_types[ext] = file_types.get(ext, 0) + 1
                 elif content.get("type") == "folder":
                     count_file_types(content.get("contents", {}))
-    
+
     count_file_types(repo_structure)
     if file_types:
         formatted_parts.append(f"└── [cyan]File Types:[/cyan]")
-        for ext, count in sorted(file_types.items(), key=lambda x: x[1], reverse=True)[:5]:  # Top 5 file types
+        for ext, count in sorted(file_types.items(), key=lambda x: x[1], reverse=True)[
+            :5
+        ]:  # Top 5 file types
             formatted_parts.append(f"    ├── {ext}: {count} files")
-    
+
     return "\n".join(formatted_parts)
+
 
 # Load prompt template from prompt.txt and inject file contents
 def load_prompt_template(path, file_contents):
@@ -291,6 +329,7 @@ def load_prompt_template(path, file_contents):
             )
     return prompt_template
 
+
 # Walk the repo and collect relevant files by directory
 def collect_relevant_files(repo_path):
     directory_map = {}
@@ -306,6 +345,7 @@ def collect_relevant_files(repo_path):
         if relevant_files:
             directory_map[root] = relevant_files
     return directory_map
+
 
 # Summarize a directory using the model
 def summarize_directory(path, files, client):
@@ -323,6 +363,7 @@ def summarize_directory(path, files, client):
     response = client.chat.completions.create(model="reportr", messages=messages)
     return response.choices[0].message.content
 
+
 # Main function to be called by the client
 def summarize_by_folder(client, repo_path="."):
     """
@@ -339,15 +380,15 @@ def summarize_by_folder(client, repo_path="."):
 
     # Add directory tree using a simple text-based approach
     repo_structure = build_repo_structure(repo_path)
-    
-    summary_parts.append("[bold sky_blue1]Directory Tree:[/bold sky_blue1]")
+
+    summary_parts.append("[bold sky_blue2]Directory Tree:[/bold sky_blue2]")
     tree_output = []
-    
+
     def build_text_tree(structure, prefix="", is_last=True):
         items = list(sorted(structure.items()))
         for i, (name, content) in enumerate(items):
-            is_last_item = (i == len(items) - 1)
-            
+            is_last_item = i == len(items) - 1
+
             # Choose the appropriate tree character
             if prefix == "":
                 # Root level
@@ -356,20 +397,22 @@ def summarize_by_folder(client, repo_path="."):
             else:
                 current_prefix = prefix + ("├── " if not is_last_item else "└── ")
                 next_prefix = prefix + ("│   " if not is_last_item else "    ")
-            
+
             if isinstance(content, dict) and content.get("type") == "file":
                 # This is a file
                 tree_output.append(f"{current_prefix}[green]{name}[/green]")
             elif isinstance(content, dict) and content.get("type") == "folder":
                 # This is a directory
-                tree_output.append(f"{current_prefix}[bold yellow]{name}/[/bold yellow]")
+                tree_output.append(
+                    f"{current_prefix}[bold yellow]{name}/[/bold yellow]"
+                )
                 build_text_tree(content.get("contents", {}), next_prefix, is_last_item)
 
     build_text_tree(repo_structure)
     summary_parts.append("\n".join(tree_output))
 
     # Add summaries for each directory
-    summary_parts.append("\n[bold sky_blue1]Summaries:[/bold sky_blue1]")
+    summary_parts.append("\n[bold sky_blue2]Summaries:[/bold sky_blue2]")
     directory_map = collect_relevant_files(repo_path)
 
     for path, files in directory_map.items():
@@ -379,21 +422,25 @@ def summarize_by_folder(client, repo_path="."):
 
     return "\n".join(summary_parts)
 
+
 # Print directory tree
 def print_tree(root_path, prefix=""):
     """
     Print directory tree using Rich Tree formatting.
-    
+
     Args:
         root_path: Path to the repository root
         prefix: Indentation prefix for tree display (unused with Rich)
     """
     console = Console()
     repo_structure = build_repo_structure(root_path)
-    
+
     # Create Rich tree structure
-    tree = Tree(f"[bold blue]{os.path.basename(root_path) or root_path}[/bold blue]", style="bold blue")
-    
+    tree = Tree(
+        f"[bold blue]{os.path.basename(root_path) or root_path}[/bold blue]",
+        style="bold blue",
+    )
+
     def build_rich_tree(structure, parent_node):
         for name, content in sorted(structure.items()):
             if isinstance(content, dict) and content.get("type") == "file":
@@ -403,26 +450,27 @@ def print_tree(root_path, prefix=""):
                 # This is a directory - yellow color with slash
                 folder_node = parent_node.add(f"[bold yellow]{name}/[/bold yellow]")
                 build_rich_tree(content.get("contents", {}), folder_node)
-    
+
     build_rich_tree(repo_structure, tree)
     console.print(tree)
+
 
 def format_markdown_text(text):
     """
     Format markdown-style text with Rich markup for **bold** and `code` elements.
-    
+
     Args:
         text: Text that may contain **bold** or `code` markdown
-        
+
     Returns:
         str: Text with Rich markup applied
     """
     import re
-    
+
     # Replace **bold text** with Rich bold markup in bright white
-    text = re.sub(r'\*\*(.*?)\*\*', r'[bold bright_white]\1[/bold bright_white]', text)
-    
+    text = re.sub(r"\*\*(.*?)\*\*", r"[bold bright_white]\1[/bold bright_white]", text)
+
     # Replace `code text` with Rich markup in bright yellow
-    text = re.sub(r'`(.*?)`', r'[bright_yellow]\1[/bright_yellow]', text)
-    
+    text = re.sub(r"`(.*?)`", r"[bright_yellow]\1[/bright_yellow]", text)
+
     return text
