@@ -192,6 +192,7 @@ def execute_features(args):
 
     # if 'llm-file-scan' command is provided, analyze files with LLM
     elif args.command == "llm-file-scan":
+        print("Calling LLM File Scan")
         from features.code_quality.llm_file_scan import (
             collect_code_files_from_path,
             create_llm_file_scan,
@@ -243,7 +244,13 @@ def main():
     results = execute_features(args)
 
     # only apply rich formatting for summarize commands
-    if args.command in ["summarize-details", "summarize-overview"]:
+    if args.command in [
+        "summarize-details",
+        "summarize-overview",
+        "llm-file-scan",
+        "security-scan-summary",
+        "codeql-cwe-summary",
+    ]:
         console = Console()
 
         # print the results with rich formatting
