@@ -17,9 +17,9 @@ def show_help():
     
     # Examples
     console.print("\n[bold]Examples:[/bold]")
-    console.print("  python reportr_client.py [sky_blue1]progress-report[/sky_blue1]")
-    console.print("  python reportr_client.py [sky_blue1]progress-report[/sky_blue1] --username [white]dev1[/white] --days [white]7[/white]")
-    console.print("  python reportr_client.py [sky_blue1]summarize-details[/sky_blue1] --path [white]/path/to/repo[/white]")
+    console.print("  python reportr.py [sky_blue1]progress-report[/sky_blue1]")
+    console.print("  python reportr.py [sky_blue1]progress-report[/sky_blue1] --username [white]dev1[/white] --days [white]7[/white]")
+    console.print("  python reportr.py [sky_blue1]summarize-details[/sky_blue1] --path [white]/path/to/repo[/white]")
     
     # Options
     console.print("\n[bold]Common Options:[/bold]")

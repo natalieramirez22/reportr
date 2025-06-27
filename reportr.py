@@ -56,13 +56,13 @@ def parse_arguments():
         add_help=False,  # Disable default help to use our Rich styled help
         epilog="""
             Examples:
-            python reportr_client.py generate-readme
-            python reportr_client.py summarize-details --path /path/to/repo
-            python reportr_client.py summarize-overviews --path /path/to/repo
-            python reportr_client.py progress-report --username "msft-alias"
-            python reportr_client.py progress-report --days 60 --detailed
-            python reportr_client.py progress-report --branch "develop"
-            python reportr_client.py progress-report --branch "feature/new-feature" --username "dev1" --username "dev2"
+            python reportr.py generate-readme
+            python reportr.py summarize-details --path /path/to/repo
+            python reportr.py summarize-overviews --path /path/to/repo
+            python reportr.py progress-report --username "msft-alias"
+            python reportr.py progress-report --days 60 --detailed
+            python reportr.py progress-report --branch "develop"
+            python reportr.py progress-report --branch "feature/new-feature" --username "dev1" --username "dev2"
         """,
     )
 
@@ -252,7 +252,7 @@ def main():
                 content,
                 title=f"[bold sky_blue1]{title}[/bold sky_blue1]",
                 title_align="left",
-                border_style="plum2",
+                border_style="sky_blue2",
                 padding=(1, 2),
                 expand=False,
                 width=min(120, console.size.width - 4),
