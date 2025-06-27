@@ -35,7 +35,7 @@ def create_client():
     """Create and return an Azure OpenAI client"""
 
     return AzureOpenAI(
-        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        api_key=os.getenv("AZURE_OPENAI_KEY"),
         api_version="2024-02-15-preview",
         azure_endpoint="https://natalie-design-agent-resource.cognitiveservices.azure.com/",
     )
@@ -180,9 +180,14 @@ def execute_features(args):
 
    # if 'llm-file-scan' command is provided, analyze files with LLM
     elif args.command == "llm-file-scan":
+        from features.code_quality.llm_file_scan import collect_code_files_from_path, create_llm_file_scan
+        all_files = []
+        for path in args.files:
+            all_files.extend(collect_code_files_from_path(path, exts={'.py'}))  # or whatever extensions you want
+
         issues = create_llm_file_scan(client, args.files)
-        print("LLM Security Issues Output:")
-        print(json.dumps(issues, indent=2))
+        # print("LLM Security Issues Output:")
+        # print(json.dumps(issues, indent=2))
         results.append(("LLM Security Issues", json.dumps(issues, indent=2)))
 
     # if 'security-scan-summary' command is provided, summarize security scan results in text format

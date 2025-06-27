@@ -31,7 +31,7 @@ def analyze_files_with_llm(file_paths, client: AzureOpenAI):
     )
 
     content = response.choices[0].message.content
-    print("LLM response:", repr(content))  # Keep for debugging
+    # print("LLM response:", repr(content))  # Keep for debugging
 
     try:
         issues = json.loads(content)
@@ -57,3 +57,15 @@ def create_llm_file_scan(client: AzureOpenAI, file_paths: list) -> list:
 
     issues = analyze_files_with_llm(file_paths, client)
     return issues
+
+def collect_code_files_from_path(path, exts=None):
+    collected = []
+    if os.path.isfile(path):
+        if not exts or os.path.splitext(path)[1] in exts:
+            collected.append(path)
+    elif os.path.isdir(path):
+        for root, _, files in os.walk(path):
+            for file in files:
+                if not exts or os.path.splitext(file)[1] in exts:
+                    collected.append(os.path.join(root, file))
+    return collected
