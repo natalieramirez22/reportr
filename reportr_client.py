@@ -138,7 +138,7 @@ def execute_features(args):
     elif args.command == "summarize-details":
         summary = summarize_details(client, repo_path=args.path)
         results.append(("Repository Directory Summary", summary))
-    
+
     # if 'summarize-entire-directory' command is provided, summarize entire directory
     elif args.command == "summarize-overview":
         summary = summarize_overview(client, repo_path=args.path)
@@ -164,23 +164,23 @@ def main():
     # execute the requested features
     results = execute_features(args)
 
-    # Create Rich console for beautiful output
-    console = Console()
+    # only apply rich formatting for summarize commands
+    if args.command in ["summarize-details", "summarize-overview"]:
+        console = Console()
 
-    # print the results with Rich formatting
-    for title, content in results:
-        # Create a styled panel for each result with better width management
-        panel = Panel(
-            content,
-            title=f"[bold blue]{title}[/bold blue]",
-            title_align="left",
-            border_style="blue",
-            padding=(1, 2),
-            expand=False,
-            width=min(120, console.size.width - 4)  # Responsive width with max limit
-        )
-        console.print(panel)
-        console.print()  # Add some spacing between panels
+        # print the results with rich formatting
+        for title, content in results:
+            panel = Panel(
+                content,
+                title=f"[bold sky_blue1]{title}[/bold sky_blue1]",
+                title_align="left",
+                border_style="plum2",
+                padding=(1, 2),
+                expand=False,
+                width=min(120, console.size.width - 4),
+            )
+            console.print(panel)
+            console.print()
 
 
 if __name__ == "__main__":
