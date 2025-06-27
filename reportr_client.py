@@ -30,6 +30,7 @@ from features.code_quality.codeql_cwe_insights import generate_codeql_cwe_insigh
 
 # load environment variables from .env file
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
@@ -67,9 +68,7 @@ def parse_arguments():
 
     # Add help argument manually
     parser.add_argument(
-        "-h", "--help", 
-        action="store_true", 
-        help="Show this help message and exit"
+        "-h", "--help", action="store_true", help="Show this help message and exit"
     )
 
     # create subparsers for different commands
@@ -133,10 +132,7 @@ def parse_arguments():
         "llm-file-scan", help="Analyze code files for security issues using LLM"
     )
     llm_scan_parser.add_argument(
-        "--files",
-        nargs="+",
-        required=True,
-        help="List of code files to analyze"
+        "--files", nargs="+", required=True, help="List of code files to analyze"
     )
 
     # security-scan-summary subcommand
@@ -145,9 +141,7 @@ def parse_arguments():
         "security-scan-summary", help="Summarize security scan results (text output)"
     )
     sec_scan_parser.add_argument(
-        "--input",
-        required=True,
-        help="Path to a JSON file with scan results"
+        "--input", required=True, help="Path to a JSON file with scan results"
     )
 
     # codeql-cwe-summary subcommand
@@ -156,9 +150,7 @@ def parse_arguments():
         "codeql-cwe-summary", help="Summarize CodeQL scan results (JSON output)"
     )
     codeql_parser.add_argument(
-        "--input",
-        required=True,
-        help="Path to a JSON file with scan results"
+        "--input", required=True, help="Path to a JSON file with scan results"
     )
 
     return parser.parse_args()
@@ -170,6 +162,8 @@ def execute_features(args):
 
     # create the client
     client = create_client()
+
+    results = []
 
     # if 'progress-report' command is provided, generate a progress report
     if args.command == "progress-report":
@@ -196,12 +190,18 @@ def execute_features(args):
         summary = summarize_overview(client, repo_path=args.path)
         results.append(("Repository Summary", summary))
 
-   # if 'llm-file-scan' command is provided, analyze files with LLM
+    # if 'llm-file-scan' command is provided, analyze files with LLM
     elif args.command == "llm-file-scan":
-        from features.code_quality.llm_file_scan import collect_code_files_from_path, create_llm_file_scan
+        from features.code_quality.llm_file_scan import (
+            collect_code_files_from_path,
+            create_llm_file_scan,
+        )
+
         all_files = []
         for path in args.files:
-            all_files.extend(collect_code_files_from_path(path, exts={'.py'}))  # or whatever extensions you want
+            all_files.extend(
+                collect_code_files_from_path(path, exts={".py"})
+            )  # or whatever extensions you want
 
         issues = create_llm_file_scan(client, args.files)
         # print("LLM Security Issues Output:")
@@ -211,6 +211,7 @@ def execute_features(args):
     # if 'security-scan-summary' command is provided, summarize security scan results in text format
     elif args.command == "security-scan-summary":
         from features.code_quality.security_scan_summary import SecurityScanResult
+
         with open(args.input) as f:
             raw = json.load(f)
         # Convert dicts to SecurityScanResult objects
@@ -223,7 +224,6 @@ def execute_features(args):
             scan_results = json.load(f)
         summary = generate_codeql_cwe_insights(scan_results, client)
         results.append(("CodeQL CWE Insights", summary))
-           
 
     return results
 
@@ -235,7 +235,7 @@ def main():
     args = parse_arguments()
 
     # Check if help was requested or no command provided
-    if (hasattr(args, 'help') and args.help) or not args.command:
+    if (hasattr(args, "help") and args.help) or not args.command:
         show_help()
         return
 
@@ -259,8 +259,6 @@ def main():
             )
             console.print(panel)
             console.print()
-
-
 
 
 if __name__ == "__main__":
