@@ -57,6 +57,7 @@ def parse_arguments():
         epilog="""
             Examples:
             python reportr.py generate-readme
+            python reportr.py generate-readme --path /path/to/repo
             python reportr.py summarize-details --path /path/to/repo
             python reportr.py summarize-overviews --path /path/to/repo
             python reportr.py progress-report --username "msft-alias"
@@ -102,6 +103,12 @@ def parse_arguments():
     # generate-readme subcommand
     readme_parser = subparsers.add_parser(
         "generate-readme", help="Generate a README file for the current repository"
+    )
+    readme_parser.add_argument(
+        "--path",
+        type=str,
+        default=".",
+        help="Path to the local repository or directory to generate README for (default: current directory)",
     )
 
     # summarize-details subcommand
@@ -177,7 +184,7 @@ def execute_features(args):
 
     # if 'generate-readme' command is provided, generate a README file
     elif args.command == "generate-readme":
-        readme = generate_readme(client)
+        readme = generate_readme(client, repo_path=args.path)
         write_to_readme_file(readme)
 
     # if 'summarize-by-folder' command is provided, summarize using directory-by-directory approach
