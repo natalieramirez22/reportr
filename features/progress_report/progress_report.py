@@ -23,26 +23,38 @@ def format_markdown_to_rich(markdown_text: str) -> str:
     formatted_text = markdown_text
 
     # Bold text: **text** or __text__ -> [bold]text[/bold]
-    formatted_text = re.sub(r"\*\*(.*?)\*\*", r"[bold]\1[/bold]", formatted_text)
-    formatted_text = re.sub(r"__(.*?)__", r"[bold]\1[/bold]", formatted_text)
-
-    # Italic text: *text* or _text_ -> [italic]text[/italic]
-    formatted_text = re.sub(r"\*(.*?)\*", r"[italic]\1[/italic]", formatted_text)
-    formatted_text = re.sub(r"_(.*?)_", r"[italic]\1[/italic]", formatted_text)
-
-    # Code blocks: `code` -> [code]code[/code]
-    formatted_text = re.sub(r"`([^`]+)`", r"[code]\1[/code]", formatted_text)
-
-    # Headers: # Header -> [bold cyan]Header[/bold cyan]
     formatted_text = re.sub(
-        r"^### (.*?)$", r"[bold cyan]\1[/bold cyan]", formatted_text, flags=re.MULTILINE
+        r"\*\*(.*?)\*\*", r"[bold sky_blue1]\1[/bold sky_blue1]", formatted_text
     )
     formatted_text = re.sub(
-        r"^## (.*?)$", r"[bold blue]\1[/bold blue]", formatted_text, flags=re.MULTILINE
+        r"__(.*?)__", r"[bold sky_blue1]\1[/bold sky_blue1]", formatted_text
+    )
+
+    # Code blocks: `code` -> [code]code[/code]
+    formatted_text = re.sub(r"`([^`]+)`", r"[cornsilk1]\1[/cornsilk1]", formatted_text)
+
+    # Headers: # Header -> [bold pink1]Header[/bold pink1]
+    formatted_text = re.sub(
+        r"^#### (.*?)$",
+        r"[bold pink1]\1[/bold pink1]",
+        formatted_text,
+        flags=re.MULTILINE,
+    )
+    formatted_text = re.sub(
+        r"^### (.*?)$",
+        r"[bold plum2]\1[/bold plum2]",
+        formatted_text,
+        flags=re.MULTILINE,
+    )
+    formatted_text = re.sub(
+        r"^## (.*?)$",
+        r"[bold pink1]\1[/bold pink1]",
+        formatted_text,
+        flags=re.MULTILINE,
     )
     formatted_text = re.sub(
         r"^# (.*?)$",
-        r"[bold magenta]\1[/bold magenta]",
+        r"[bold plum2]\1[/bold plum2]",
         formatted_text,
         flags=re.MULTILINE,
     )
@@ -51,13 +63,9 @@ def format_markdown_to_rich(markdown_text: str) -> str:
     formatted_text = re.sub(r"^- (.*?)$", r"• \1", formatted_text, flags=re.MULTILINE)
 
     # Emphasis on key metrics: numbers and percentages
-    formatted_text = re.sub(r"(\d+%)", r"[bold green]\1[/bold green]", formatted_text)
-    formatted_text = re.sub(
-        r"(\d+ commits)", r"[bold yellow]\1[/bold yellow]", formatted_text
-    )
-    formatted_text = re.sub(
-        r"(\d+ files)", r"[bold blue]\1[/bold blue]", formatted_text
-    )
+    formatted_text = re.sub(r"(\d+%)", r"[bold]\1[/bold]", formatted_text)
+    formatted_text = re.sub(r"(\d+ commits)", r"[bold]\1[/bold]", formatted_text)
+    formatted_text = re.sub(r"(\d+ files)", r"[bold]\1[/bold]", formatted_text)
 
     return formatted_text
 
@@ -66,13 +74,14 @@ def format_markdown_to_rich(markdown_text: str) -> str:
 def create_repository_overview(git_data, branch):
     """Create a Rich panel for repository overview"""
     repo_overview = Panel(
-        f"[bold]Repository:[/bold] {git_data['repo_name']}\n"
-        f"[bold]Branch:[/bold] {branch}\n"
-        f"[bold]Analysis Period:[/bold] {git_data['period']}\n"
-        f"[bold]Filter:[/bold] {git_data['filtered_by']}\n"
-        f"[bold]Total Commits:[/bold] {git_data['total_commits']}",
+        f"[bold sky_blue1]Repository:[/bold sky_blue1] {git_data['repo_name']}\n"
+        f"[bold sky_blue1]Branch:[/bold sky_blue1] {branch}\n"
+        f"[bold sky_blue1]Analysis Period:[/bold sky_blue1] {git_data['period']}\n"
+        f"[bold sky_blue1]Filter:[/bold sky_blue1] {git_data['filtered_by']}\n"
+        f"[bold sky_blue1]Total Commits:[/bold sky_blue1] {git_data['total_commits']}",
         title="Repository Overview",
-        border_style="cyan",
+        border_style="plum2",
+        title_align="left",
         padding=(1, 2),
     )
 
@@ -82,12 +91,12 @@ def create_repository_overview(git_data, branch):
 def create_contributor_summary(git_data):
     """Create a Rich table for contributors summary"""
     contributors_table = Table(title="Contributors Summary", title_justify="left")
-    contributors_table.add_column("Contributor", style="cyan", no_wrap=True)
-    contributors_table.add_column("Commits", style="magenta", justify="right")
+    contributors_table.add_column("Contributor", style="sky_blue1", no_wrap=True)
+    contributors_table.add_column("Commits", style="pink1", justify="right")
     contributors_table.add_column("Lines Added", style="green", justify="right")
-    contributors_table.add_column("Lines Deleted", style="red", justify="right")
-    contributors_table.add_column("Files Changed", style="yellow", justify="right")
-    contributors_table.add_column("Net Lines", style="blue", justify="right")
+    contributors_table.add_column("Lines Deleted", style="white", justify="right")
+    contributors_table.add_column("Files Changed", style="plum2", justify="right")
+    contributors_table.add_column("Net Lines", style="cornsilk1", justify="right")
 
     for author, stats in git_data["contributors"].items():
         net_lines = stats["lines_added"] - stats["lines_deleted"]
@@ -112,11 +121,11 @@ def create_commits_table(git_data, max_commits=10):
     commits_table = Table(
         title=f"Recent Commits (Last {max_commits})", title_justify="left"
     )
-    commits_table.add_column("Date", style="cyan", no_wrap=True)
-    commits_table.add_column("Author", style="magenta")
-    commits_table.add_column("Hash", style="yellow", no_wrap=True)
-    commits_table.add_column("Message", style="white")
-    commits_table.add_column("Changes", style="blue", justify="right")
+    commits_table.add_column("Date", style="sky_blue1", no_wrap=True)
+    commits_table.add_column("Author", style="pink1")
+    commits_table.add_column("Hash", style="plum2", no_wrap=True)
+    commits_table.add_column("Message", style="cornsilk1")
+    commits_table.add_column("Changes", style="green", justify="right")
 
     for commit in git_data["commits"][:max_commits]:
         changes = f"+{commit['lines_added']} -{commit['lines_deleted']} ({commit['files_changed']} files)"
@@ -133,6 +142,39 @@ def create_commits_table(git_data, max_commits=10):
         )
 
     return commits_table
+
+
+def clean_repetitive_content(text):
+    """
+    Clean up repetitive content in AI-generated reports
+    """
+    if not text:
+        return text
+
+    # Split into lines and remove duplicate consecutive lines
+    lines = text.split("\n")
+    cleaned_lines = []
+    prev_line = None
+
+    for line in lines:
+        line = line.strip()
+        if line != prev_line:
+            cleaned_lines.append(line)
+            prev_line = line
+
+    # Remove excessive separators
+    cleaned_text = "\n".join(cleaned_lines)
+    cleaned_text = re.sub(r"---\s*\n\s*---\s*\n\s*---", "---", cleaned_text)
+
+    # Remove excessive "Summary:" sections
+    cleaned_text = re.sub(
+        r"(\[bold skyblue1\]Summary:\[/bold skyblue1\].*?)(?=\[bold skyblue1\]Summary:\[/bold skyblue1\])",
+        r"\1",
+        cleaned_text,
+        flags=re.DOTALL,
+    )
+
+    return cleaned_text
 
 
 # ! MAIN FUNCTION
@@ -154,14 +196,15 @@ def create_progress_report(
         include_contributor_summaries: Whether to include detailed summaries for each contributor
         branch: Optional branch name to analyze
     """
-    console.print("[bold blue]🚀 Generating Progress Report[/bold blue]")
+
+    console.print("[bold sky_blue1]🚀 Generating Progress Report[/bold sky_blue1]")
 
     # get the git history data from functions/git_history.py
     git_data = get_git_history(repo_path, days_back, contributor_filter, branch)
 
     if not git_data:
         console.print(
-            "[red]❌ Could not analyze git repository. Make sure you're in a git repository.[/red]"
+            "[red]Could not analyze git repository. Make sure you're in a git repository.[/red]"
         )
         return
 
@@ -215,7 +258,7 @@ def create_progress_report(
     # load the prompt template
     messages = None
     try:
-        with open(prompt_path, "r") as f:
+        with open(prompt_path, "r", encoding="utf-8") as f:
             prompt_template = f.read()
 
         # Escape the report_context to make it JSON-safe
@@ -242,11 +285,17 @@ def create_progress_report(
 
             # ! openai model call
             response = client.chat.completions.create(
-                model="reportr", messages=messages, max_tokens=2000, temperature=0.7
+                model="reportr",
+                messages=messages,
+                max_tokens=1500,  # Reduced from 2000 to prevent repetitive output
+                temperature=0.5,  # Reduced from 0.7 for more focused output
             )
 
             # capture the response from the LLM
             main_report = response.choices[0].message.content
+
+            # Clean up repetitive content
+            main_report = clean_repetitive_content(main_report)
 
             progress.update(task, description="AI analysis complete!")
     except Exception as e:
@@ -259,11 +308,12 @@ def create_progress_report(
     # display the main report in a panel
     main_report_panel = Panel(
         formatted_report,
-        title="AI-Generated Progress Report",
-        border_style="blue",
+        title=" AI-Generated Progress Report",
+        title_align="left",
+        border_style="plum2",
         padding=(1, 2),
     )
     console.print(main_report_panel)
 
-    console.print("[bold green]✅ Progress report generation complete![/bold green]")
+    console.print("[bold green]Progress report generation complete![/bold green]")
     return main_report

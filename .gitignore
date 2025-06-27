@@ -10,3 +10,6 @@ __pycache__/
 
 #venv
 venv/
+
+# .pyc
+__pycache__

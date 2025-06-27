@@ -10,10 +10,13 @@ from features.generate_readme.generate_readme import (
     generate_readme,
     write_to_readme_file,
 )
-from features.summarize_repo.summarize_repo import (
-    summarize_by_folder,
-    summarize_entire_directory,
+from features.summarize_details.summarize_details import (
+    summarize_details,
 )
+from features.summarize_overview.summarize_overview import (
+    summarize_overview,
+)
+from help_command import show_help
 
 from features.code_quality.llm_file_scan import create_llm_file_scan
 from features.code_quality.security_scan_summary import (
@@ -49,14 +52,24 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Reportr - AI-powered repository analysis and documentation tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
+        add_help=False,  # Disable default help to use our Rich styled help
         epilog="""
             Examples:
-            python reportr_client.py progress-report
+            python reportr_client.py generate-readme
+            python reportr_client.py summarize-details --path /path/to/repo
+            python reportr_client.py summarize-overviews --path /path/to/repo
             python reportr_client.py progress-report --username "msft-alias"
             python reportr_client.py progress-report --days 60 --detailed
             python reportr_client.py progress-report --branch "develop"
             python reportr_client.py progress-report --branch "feature/new-feature" --username "dev1" --username "dev2"
         """,
+    )
+
+    # Add help argument manually
+    parser.add_argument(
+        "-h", "--help", 
+        action="store_true", 
+        help="Show this help message and exit"
     )
 
     # create subparsers for different commands
@@ -80,6 +93,7 @@ def parse_arguments():
     progress_parser.add_argument(
         "--detailed", action="store_true", help="Include detailed contributor summaries"
     )
+
     progress_parser.add_argument(
         "--branch",
         type=str,
@@ -91,10 +105,9 @@ def parse_arguments():
         "generate-readme", help="Generate a README file for the current repository"
     )
 
-    # summarize-by-folder subcommand
+    # summarize-details subcommand
     summarize_folder_parser = subparsers.add_parser(
-        "summarize-by-folder",
-        help="Summarize the repository using directory-by-directory approach",
+        "summarize-details", help="Summarize a sub-directory with a focus on details"
     )
     summarize_folder_parser.add_argument(
         "--path",
@@ -103,10 +116,9 @@ def parse_arguments():
         help="Path to the local repository or directory to summarize (default: current directory)",
     )
 
-    # summarize-entire-directory subcommand
+    # summarize-overview subcommand
     summarize_entire_parser = subparsers.add_parser(
-        "summarize-entire-directory",
-        help="Summarize the repository using the entire structure as JSON context",
+        "summarize-overview", help="Summarize the repository overview and structure"
     )
 
     summarize_entire_parser.add_argument(
@@ -175,13 +187,14 @@ def execute_features(args):
         write_to_readme_file(readme)
 
     # if 'summarize-by-folder' command is provided, summarize using directory-by-directory approach
-    elif args.command == "summarize-by-folder":
-        summarize_by_folder(client, repo_path=args.path)
+    elif args.command == "summarize-details":
+        summary = summarize_details(client, repo_path=args.path)
+        results.append(("Repository Directory Summary", summary))
 
-    # if 'summarize-entire-directory' command is provided, summarize using JSON structure
-    elif args.command == "summarize-entire-directory":
-        summary = summarize_entire_directory(client, repo_path=args.path)
-        results.append(("Repository JSON Structure Summary", summary))
+    # if 'summarize-entire-directory' command is provided, summarize entire directory
+    elif args.command == "summarize-overview":
+        summary = summarize_overview(client, repo_path=args.path)
+        results.append(("Repository Summary", summary))
 
    # if 'llm-file-scan' command is provided, analyze files with LLM
     elif args.command == "llm-file-scan":
@@ -221,16 +234,33 @@ def main():
     # parse the arguments
     args = parse_arguments()
 
-    # if no command provided, show help
-    if not args.command:
-        parser = argparse.ArgumentParser(
-            description="Reportr - AI-powered repository analysis and documentation tool"
-        )
-        parser.print_help()
+    # Check if help was requested or no command provided
+    if (hasattr(args, 'help') and args.help) or not args.command:
+        show_help()
         return
 
     # execute the requested features
-    execute_features(args)
+    results = execute_features(args)
+
+    # only apply rich formatting for summarize commands
+    if args.command in ["summarize-details", "summarize-overview"]:
+        console = Console()
+
+        # print the results with rich formatting
+        for title, content in results:
+            panel = Panel(
+                content,
+                title=f"[bold sky_blue1]{title}[/bold sky_blue1]",
+                title_align="left",
+                border_style="plum2",
+                padding=(1, 2),
+                expand=False,
+                width=min(120, console.size.width - 4),
+            )
+            console.print(panel)
+            console.print()
+
+
 
 
 if __name__ == "__main__":
