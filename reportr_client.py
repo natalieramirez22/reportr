@@ -1,4 +1,5 @@
 import os
+import json
 import argparse
 from openai import AzureOpenAI
 from dotenv import load_dotenv
@@ -14,6 +15,18 @@ from features.summarize_repo.summarize_repo import (
     summarize_entire_directory,
 )
 
+from features.code_quality.llm_file_scan import create_llm_file_scan
+from features.code_quality.security_scan_summary import (
+    generate_security_scan_summary as summary_text,
+)
+from features.code_quality.codeql_cwe_insights import (
+    generate_security_scan_summary as summary_json,
+)
+
+from features.code_quality.codeql_cwe_insights import generate_codeql_cwe_insights
+
+# load environment variables from .env file
+from dotenv import load_dotenv
 load_dotenv()
 
 
@@ -103,6 +116,39 @@ def parse_arguments():
         help="Path to the local repository or directory to summarize (default: current directory)",
     )
 
+    # llm-file-scan subcommand
+    llm_scan_parser = subparsers.add_parser(
+        "llm-file-scan", help="Analyze code files for security issues using LLM"
+    )
+    llm_scan_parser.add_argument(
+        "--files",
+        nargs="+",
+        required=True,
+        help="List of code files to analyze"
+    )
+
+    # security-scan-summary subcommand
+    # This command is for summarizing security scan results in text format
+    sec_scan_parser = subparsers.add_parser(
+        "security-scan-summary", help="Summarize security scan results (text output)"
+    )
+    sec_scan_parser.add_argument(
+        "--input",
+        required=True,
+        help="Path to a JSON file with scan results"
+    )
+
+    # codeql-cwe-summary subcommand
+    # This command is for summarizing security scan results in JSON format
+    codeql_parser = subparsers.add_parser(
+        "codeql-cwe-summary", help="Summarize CodeQL scan results (JSON output)"
+    )
+    codeql_parser.add_argument(
+        "--input",
+        required=True,
+        help="Path to a JSON file with scan results"
+    )
+
     return parser.parse_args()
 
 
@@ -134,7 +180,39 @@ def execute_features(args):
 
     # if 'summarize-entire-directory' command is provided, summarize using JSON structure
     elif args.command == "summarize-entire-directory":
-        summarize_entire_directory(client, repo_path=args.path)
+        summary = summarize_entire_directory(client, repo_path=args.path)
+        results.append(("Repository JSON Structure Summary", summary))
+
+   # if 'llm-file-scan' command is provided, analyze files with LLM
+    elif args.command == "llm-file-scan":
+        from features.code_quality.llm_file_scan import collect_code_files_from_path, create_llm_file_scan
+        all_files = []
+        for path in args.files:
+            all_files.extend(collect_code_files_from_path(path, exts={'.py'}))  # or whatever extensions you want
+
+        issues = create_llm_file_scan(client, args.files)
+        # print("LLM Security Issues Output:")
+        # print(json.dumps(issues, indent=2))
+        results.append(("LLM Security Issues", json.dumps(issues, indent=2)))
+
+    # if 'security-scan-summary' command is provided, summarize security scan results in text format
+    elif args.command == "security-scan-summary":
+        from features.code_quality.security_scan_summary import SecurityScanResult
+        with open(args.input) as f:
+            raw = json.load(f)
+        # Convert dicts to SecurityScanResult objects
+        scan_results = [SecurityScanResult(**issue) for issue in raw]
+        summary = summary_text(scan_results)
+        results.append(("Security Scan Summary (Text)", summary))
+
+    elif args.command == "codeql-cwe-summary":
+        with open(args.input) as f:
+            scan_results = json.load(f)
+        summary = generate_codeql_cwe_insights(scan_results, client)
+        results.append(("CodeQL CWE Insights", summary))
+           
+
+    return results
 
 
 def main():
