@@ -1,0 +1,27 @@
+[
+  {
+    "severity": "high",
+    "description": "SQL injection vulnerability due to unsafe string formatting in SQL query.",
+    "cwe_id": "CWE-89"
+  },
+  {
+    "severity": "high",
+    "description": "Cross-site scripting (XSS) vulnerability due to unescaped user input rendered in HTML.",
+    "cwe_id": "CWE-79"
+  },
+  {
+    "severity": "high",
+    "description": "Hardcoded credentials expose sensitive information in source code.",
+    "cwe_id": "CWE-798"
+  },
+  {
+    "severity": "medium",
+    "description": "Use of weak cryptographic hash function MD5 for password hashing.",
+    "cwe_id": "CWE-327"
+  },
+  {
+    "severity": "medium",
+    "description": "Use of predictable random number generator for token generation.",
+    "cwe_id": "CWE-916"
+  }
+]

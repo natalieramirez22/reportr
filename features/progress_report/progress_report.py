@@ -183,8 +183,8 @@ def create_progress_report(
     repo_path=".",
     days_back=30,
     contributor_filter=None,
-    include_contributor_summaries=False,
     branch=None,
+    use_specific_user_prompt=False,
 ):
     """
     Create a comprehensive progress report for a git repository
@@ -199,8 +199,8 @@ def create_progress_report(
 
     console.print("[bold sky_blue1]🚀 Generating Progress Report[/bold sky_blue1]")
 
+    # get the git history data from functions/git_history.py
     git_data = get_git_history(repo_path, days_back, contributor_filter, branch)
-    # console.print(f"Git Data: {git_data}")
 
     if not git_data:
         console.print(
@@ -233,15 +233,29 @@ def create_progress_report(
     """
 
     report_context += "\nRecent Commits:\n"
-    for commit in git_data["commits"][:20]:  # Show last 20 commits
+    for commit in git_data["commits"][:20]:  # show last 20 commits
         report_context += f"""
-            - {commit['date']} - {commit['author']} ({commit['hash']})
-            {commit['message']}
-            +{commit['lines_added']} -{commit['lines_deleted']} lines, {commit['files_changed']} files, diffs: {commit['diffs']}
+            - Date: {commit['date']}
+            - Author: {commit['author']} 
+            - Hash: ({commit['hash']})
+            - Message: {commit['message']}
+            - Lines Added: {commit['lines_added']}
+            - Lines Deleted: {commit['lines_deleted']}
+            - Files Changed: {commit['files_changed']}
+            - Diffs: {commit['diffs']}
         """
 
-    # Load the prompt template
-    prompt_path = os.path.join(os.path.dirname(__file__), "prompts/specific_user.txt")
+    # load the correct prompt based on the user input
+    if use_specific_user_prompt:
+        prompt_path = os.path.join(
+            os.path.dirname(__file__), "prompts/specific_user.txt"
+        )
+    else:
+        prompt_path = os.path.join(
+            os.path.dirname(__file__), "prompts/general_report.txt"
+        )
+
+    # load the prompt template
     messages = None
     try:
         with open(prompt_path, "r", encoding="utf-8") as f:
@@ -252,15 +266,14 @@ def create_progress_report(
         # Remove the outer quotes since we're inserting into a string
         escaped_context = escaped_context[1:-1]
 
-        # Replace the placeholder with actual data
+        # replace the placeholder with actual data
         prompt_template = prompt_template.replace("{report_context}", escaped_context)
         messages = json.loads(prompt_template)
     except Exception as e:
         console.print(f"[red]Error loading prompt template: {e}[/red]")
         return
 
-    # console.print(f"LLM Message: {messages}")
-
+    # make the LLM call and display the progress
     try:
         with Progress(
             SpinnerColumn(),
@@ -270,6 +283,7 @@ def create_progress_report(
             task = progress.add_task("Generating AI analysis...", total=None)
             progress.update(task, description="Generating AI analysis...")
 
+            # ! openai model call
             response = client.chat.completions.create(
                 model="reportr",
                 messages=messages,
@@ -277,6 +291,7 @@ def create_progress_report(
                 temperature=0.5,  # Reduced from 0.7 for more focused output
             )
 
+            # capture the response from the LLM
             main_report = response.choices[0].message.content
 
             # Clean up repetitive content
@@ -287,7 +302,7 @@ def create_progress_report(
         console.print(f"[red]Error generating AI analysis: {e}[/red]")
         return
 
-    # Format the markdown in the AI-generated report
+    # format the markdown from the ai-generated report to rich text
     formatted_report = format_markdown_to_rich(main_report)
 
     # display the main report in a panel
@@ -299,17 +314,6 @@ def create_progress_report(
         padding=(1, 2),
     )
     console.print(main_report_panel)
-
-    # Add contributor summaries if requested
-    if include_contributor_summaries and git_data["contributors"]:
-        console.print(
-            "\n[bold pink1]🔍 Generating Detailed Contributor Summaries...[/bold pink1]"
-        )
-
-        for contributor_name in git_data["contributors"].keys():
-            contributor_summary = create_contributor_summary(git_data)
-            main_report += f"\n\n{contributor_summary}\n"
-            main_report += "-" * 50
 
     console.print("[bold green]Progress report generation complete![/bold green]")
     return main_report
