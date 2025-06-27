@@ -61,9 +61,9 @@ def parse_arguments():
             python reportr.py summarize-details --path /path/to/repo
             python reportr.py summarize-overviews --path /path/to/repo
             python reportr.py progress-report --username "msft-alias"
-            python reportr.py progress-report --days 60 --detailed
+            python reportr.py progress-report --path /path/to/repo --days 60
             python reportr.py progress-report --branch "develop"
-            python reportr.py progress-report --branch "feature/new-feature" --username "dev1" --username "dev2"
+            python reportr.py progress-report --path /path/to/repo --branch "feature/new-feature" --username "dev1" --username "dev2"
         """,
     )
 
@@ -80,6 +80,12 @@ def parse_arguments():
         "progress-report", help="Generate a progress report for the current repository"
     )
     progress_parser.add_argument(
+        "--path",
+        type=str,
+        default=".",
+        help="Path to the local repository or directory to analyze (default: current directory)",
+    )
+    progress_parser.add_argument(
         "--username",
         action="append",
         help="Filter by specific contributor username(s). Can be used multiple times.",
@@ -90,10 +96,6 @@ def parse_arguments():
         default=30,
         help="Number of days to look back (default: 30, use 0 for all time)",
     )
-    progress_parser.add_argument(
-        "--detailed", action="store_true", help="Include detailed contributor summaries"
-    )
-
     progress_parser.add_argument(
         "--branch",
         type=str,
@@ -176,6 +178,7 @@ def execute_features(args):
     if args.command == "progress-report":
         create_progress_report(
             client,
+            repo_path=args.path,
             days_back=args.days,
             contributor_filter=args.username,
             branch=args.branch,
