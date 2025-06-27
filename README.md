@@ -15,89 +15,101 @@ A Python tool that uses Azure OpenAI to generate comprehensive progress reports 
 
 ``` txt
 reportr/
-├── reportr.py          # Main client application
-├── requirements.txt           # Python dependencies
-├── README.md                  # This file
-├── features/                  # Feature modules
-│   ├── progress-report/       # Git progress report feature
-│   │   ├── progress-report.py # Progress report implementation
-│   │   └── prompt.txt         # AI prompt template
-│   └── summarize-repo/        # Repository summary feature
-│       ├── summarize_repo.py  # Summary implementation
-│       └── prompt.txt         # AI prompt template
-└── venv/                      # Virtual environment
+├── reportr.py                         # CLI entry point for running features
+├── requirements.txt                   # Python dependencies
+├── README.md                          # Project documentation
+├── features/                          # Core features (reports, summaries, scans)
+│   ├── code_quality/                  # Code security and quality scans
+│   │   ├── codeql_cwe_insights.py     # CodeQL insights + CWE enrichment
+│   │   ├── cwe_information.csv        # CWE metadata for scans
+│   │   ├── llm_file_scan.py           # LLM-based file security scan
+│   │   └── security_scan_summary.py   # Formats scan summaries by severity
+│   ├── generate_readme/               # README generator feature
+│   │   ├── generate_readme.py         # Creates README from repo structure
+│   │   └── prompt.txt                 # Prompt template for LLM
+│   ├── progress_report/               # Git activity reports
+│   │   ├── progress_report.py         # Analyzes and summarizes commits
+│   │   └── prompts/
+│   │       ├── general_report.txt     # General team report prompt
+│   │       └── specific_user.txt      # Single-user report prompt
+│   ├── summarize_details/             # Folder-level summaries
+│   │   ├── summarize_details.py       # LLM summary of subdirectory
+│   │   └── prompt.txt                 # Prompt for detailed summary
+│   └── summarize_overview/            # Repo-wide summary
+│       ├── summarize_overview.py      # Full structure + summary
+│       └── prompt.txt                 # Prompt for overview
+├── functions/                         # Shared utility modules
+│   ├── git_history.py                 # Git analysis helpers
+│   └── help_command.py                # CLI help screen
+├── tests/                             # Example vulnerable code
+│   ├── random_test_file.json          # Sample scan result
+│   └── random_test_file.py            # Flask app with security flaws
+└── venv/                              # Python virtual environment
 ```
 
 ## Installation
 
 1. Clone this repository
-2. Install dependencies:
+2. Activate a virtual environment:
+
+   ```
+   python -m venv venv && source venv/bin/activate
+   ```
+
+3. Install dependencies:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Set up your environment variables in a `.env` file:
+4. Set up your environment variables in a `.env` file:
 
    ```
    AZURE_OPENAI_KEY=your_azure_openai_key_here
    ```
 
-## Usage
+## Available Commands:
 
-### Basic Progress Report
+   - `progress-report`: Generate a progress report
+   - `generate-readme`: Generate a README file
+   - `summarize-details`: Detailed directory analysis
+   - `summarize-overview`: Repository overview
+   - `llm-file-scan`: AI-powered security scan of code files or folders
+   - `security-scan-summary`: Summarize security scan results by severity
+   - `codeql-cwe-summary`: Top CWEs, risk score, and executive summary from CodeQL results
 
-Generate a progress report for the current repository (last 30 days):
-
-```bash
-python reportr.py
-```
-
-### Custom Time Period
-
-Generate a report for the last 7 days:
-
-```bash
-python reportr.py --days 7
-```
-
-Generate a report for all time:
-
-```bash
-python reportr.py --days 0
-```
-
-### Different Repository Path
-
-Analyze a different repository:
-
-```bash
-python reportr.py --repo-path /path/to/other/repo
-```
-
-### Simple Summary Mode
-
-Get a simple repository summary instead of a progress report:
-
-```bash
-python reportr.py --mode summary
-```
 
 ## Command Line Options
 
-- `--repo-path`: Path to the git repository (default: current directory)
-- `--days`: Number of days to look back (default: 30, use 0 for all time)
-- `--mode`: Mode selection - 'progress' or 'summary' (default: progress)
+   - `--path`
+      - Path to repository or directory (default: current directory)
+      - Usage: All features except security
+   - `--files`
+      - List of files or directories to scan
+      - Usage: `llm-file-scan` command
+   - `--input`
+      - Specify path to JSON file for scan summary commands
+      - Usage: `security-scan` and `codeql-insights` commands
+   - `--username`
+      - Filter by contributor username
+      - Usage: `progress-report` command
+   - `--days`
+      - Days to look back (default: 30)
+      - Usage: `progress-report` command
+   - `--branch`
+      - Specify branch for filtering
+      - Usage: `progress-report` command
 
 ## Output
 
-The progress report includes:
+Reportr can generate:
 
-- Executive summary of development activity
-- Key contributors and their contributions
-- Major changes and improvements made
-- Development patterns and trends
-- Summary of code changes (additions/deletions)
+- AI-powered progress reports with contributor insights and commit trends  
+- Detailed Git activity summaries filtered by user, branch, or timeframe  
+- Repository-wide or folder-specific summaries for onboarding and code comprehension  
+- Professional, project-type-aware README files  
+- Code security scan results with CWE enrichment and LLM-generated remediation tips  
+- Richly formatted terminal output for all reports
 
 ## Architecture
 

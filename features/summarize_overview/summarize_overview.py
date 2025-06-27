@@ -65,9 +65,18 @@ def build_repo_structure(repo_path):
                 subfolder_content = _build_structure(full_path)
                 repo_content[item] = {"type": "folder", "contents": subfolder_content}
             elif os.path.isfile(full_path):
-                # only include files with specified extensions
+                # Skip files larger than the size threshold and only include files with specified extensions
                 if os.path.splitext(item)[1] in INCLUDED_EXTENSIONS:
                     try:
+                        file_size = os.path.getsize(full_path)
+                        # Skip files that are too large to prevent memory issues and excessive API costs
+                        if file_size > MAX_SINGLE_FILE_SIZE_KB * 1024:
+                            repo_content[item] = {
+                                "type": "file", 
+                                "content": f"# File too large ({file_size / 1024:.1f}KB) - skipped for analysis"
+                            }
+                            continue
+                        
                         with open(full_path, "r", encoding="utf-8") as file:
                             content = file.read()
                         repo_content[item] = {"type": "file", "content": content}
@@ -107,7 +116,7 @@ def format_markdown_text(text):
 # Repository size limits to prevent excessive costs
 MAX_FILES = 500  # Maximum number of files to process
 MAX_TOTAL_SIZE_MB = 50  # Maximum total file size in MB
-MAX_SINGLE_FILE_SIZE_KB = 500  # Maximum single file size in KB
+MAX_SINGLE_FILE_SIZE_KB = 500  # Maximum single file size in KB (for validation warnings)
 
 
 def validate_repo_size(repo_path):
@@ -171,10 +180,15 @@ def validate_repo_size(repo_path):
                 file_path = os.path.join(root, file)
                 try:
                     file_size = os.path.getsize(file_path)
+                    
+                    # Skip files that are too large to prevent memory issues
+                    if file_size > MAX_SINGLE_FILE_SIZE_KB * 1024:
+                        continue
+                        
                     total_files += 1
                     total_size += file_size
 
-                    # Check individual file size
+                    # Check individual file size (this should now be redundant, but keeping for consistency)
                     if file_size > MAX_SINGLE_FILE_SIZE_KB * 1024:
                         large_files.append((file_path, file_size))
 

@@ -55,7 +55,10 @@ def generate_security_scan_summary(scan_results: list, client=None) -> dict:
 
     return summary
 
-def load_cwe_titles(csv_path="cwe_information.csv"):
+def load_cwe_titles(csv_path=None):
+    if csv_path is None:
+        # Automatically get the path relative to this script's location
+        csv_path = os.path.join(os.path.dirname(__file__), "cwe_information.csv")
     cwe_titles = {}
     with open(csv_path, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -66,7 +69,10 @@ def load_cwe_titles(csv_path="cwe_information.csv"):
             cwe_titles[f"CWE-{cwe_id}"] = name
     return cwe_titles
 
-def load_cwe_info(csv_path="cwe_information.csv"):
+def load_cwe_info(csv_path=None):
+    if csv_path is None:
+        # Automatically get the path relative to this script's location
+        csv_path = os.path.join(os.path.dirname(__file__), "cwe_information.csv")
     cwe_info = {}
     with open(csv_path, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
