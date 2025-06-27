@@ -42,7 +42,7 @@ def format_markdown_to_rich(markdown_text: str) -> str:
     )
     formatted_text = re.sub(
         r"^### (.*?)$",
-        r"[bold plum2]\1[/bold plum2]",
+        r"[bold green]\1[/bold green]",
         formatted_text,
         flags=re.MULTILINE,
     )
@@ -80,7 +80,7 @@ def create_repository_overview(git_data, branch):
         f"[bold sky_blue1]Filter:[/bold sky_blue1] {git_data['filtered_by']}\n"
         f"[bold sky_blue1]Total Commits:[/bold sky_blue1] {git_data['total_commits']}",
         title="Repository Overview",
-        border_style="plum2",
+        border_style="sky_blue2",
         title_align="left",
         padding=(1, 2),
     )
@@ -310,7 +310,7 @@ def create_progress_report(
         formatted_report,
         title=" AI-Generated Progress Report",
         title_align="left",
-        border_style="plum2",
+        border_style="sky_blue2",
         padding=(1, 2),
     )
     console.print(main_report_panel)
