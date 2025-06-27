@@ -4,12 +4,14 @@ A Python CLI tool that uses AI to generate progress reports, README files, code 
 
 ## Features
 
-- **Git History Analysis**: Analyzes commit history, contributors, and code changes
-- **Progress Reports**: Generates professional progress reports using AI
-- **Flexible Time Periods**: Can analyze recent commits or entire repository history
-- **Contributor Statistics**: Tracks commits, lines added/deleted per contributor
-- **Multiple Output Modes**: Progress reports or simple summaries
-- **Modular Architecture**: Features are separated into individual modules for easy maintenance
+- **Progress Reports**: Generates concise AI-powered reports including Git history analysis, contributor stats, code changes, and commit trends
+- **README Generation**: Creates clean, professional README files tailored to your repo’s structure and detected project type
+- **Summarize Overview**: Produces high-level summaries of the entire repository to help with onboarding and project understanding
+- **Summarize Details**: Generates detailed summaries of specific directories or components for deeper insights
+- **Security Scans**: Identifies potential vulnerabilities, enriches results with CWE insights, and provides remediation tips
+- **Modular Architecture**: Organized feature modules for easy extension and maintenance
+- **Styled Output**: All reports are formatted with Rich for clean, colorful, easy-to-read terminal output
+
 
 ## Project Structure
 
@@ -99,17 +101,7 @@ reportr/
    - `--branch`
       - Specify branch for filtering
       - Usage: `progress-report` command
-
-## Output
-
-Reportr can generate:
-
-- AI-powered progress reports with contributor insights and commit trends  
-- Detailed Git activity summaries filtered by user, branch, or timeframe  
-- Repository-wide or folder-specific summaries for onboarding and code comprehension  
-- Professional, project-type-aware README files  
-- Code security scan results with CWE enrichment and LLM-generated remediation tips  
-- Richly formatted terminal output for all reports
+        
 
 ## Architecture
 
