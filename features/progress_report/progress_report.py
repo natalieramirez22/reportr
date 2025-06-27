@@ -199,7 +199,6 @@ def create_progress_report(
 
     console.print("[bold sky_blue1]🚀 Generating Progress Report[/bold sky_blue1]")
 
-
     git_data = get_git_history(repo_path, days_back, contributor_filter, branch)
     # console.print(f"Git Data: {git_data}")
 
@@ -245,7 +244,7 @@ def create_progress_report(
     prompt_path = os.path.join(os.path.dirname(__file__), "prompts/specific_user.txt")
     messages = None
     try:
-        with open(prompt_path, "r") as f:
+        with open(prompt_path, "r", encoding="utf-8") as f:
             prompt_template = f.read()
 
         # Escape the report_context to make it JSON-safe

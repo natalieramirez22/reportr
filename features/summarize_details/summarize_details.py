@@ -219,7 +219,7 @@ def validate_repo_size(repo_path):
 # Load prompt template from prompt.txt and inject file contents
 def load_prompt_template(path, file_contents):
     prompt_path = os.path.join(os.path.dirname(__file__), "prompt.txt")
-    with open(prompt_path, "r") as f:
+    with open(prompt_path, "r", encoding="utf-8") as f:
         prompt_template = json.load(f)
 
     # Replace placeholders
@@ -344,7 +344,7 @@ def summarize_details(client, repo_path="."):
     for path, files in directory_map.items():
         # Add directory header - don't decorate the path value
         summary_parts.append(f"\n[bold sky_blue1]Directory:[/bold sky_blue1] {path}")
-        
+
         # Get the raw summary
         summary = summarize_directory(path, files, client)
 
