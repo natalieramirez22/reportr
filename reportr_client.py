@@ -15,6 +15,7 @@ from features.summarize_details.summarize_details import (
 from features.summarize_overview.summarize_overview import (
     summarize_overview,
 )
+from help_command import show_help
 
 load_dotenv()
 
@@ -38,6 +39,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Reportr - AI-powered repository analysis and documentation tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
+        add_help=False,  # Disable default help to use our Rich styled help
         epilog="""
             Examples:
             python reportr_client.py generate-readme
@@ -48,6 +50,13 @@ def parse_arguments():
             python reportr_client.py progress-report --branch "develop"
             python reportr_client.py progress-report --branch "feature/new-feature" --username "dev1" --username "dev2"
         """,
+    )
+
+    # Add help argument manually
+    parser.add_argument(
+        "-h", "--help", 
+        action="store_true", 
+        help="Show this help message and exit"
     )
 
     # create subparsers for different commands
@@ -153,12 +162,9 @@ def main():
     # parse the arguments
     args = parse_arguments()
 
-    # if no command provided, show help
-    if not args.command:
-        parser = argparse.ArgumentParser(
-            description="Reportr - AI-powered repository analysis and documentation tool"
-        )
-        parser.print_help()
+    # Check if help was requested or no command provided
+    if (hasattr(args, 'help') and args.help) or not args.command:
+        show_help()
         return
 
     # execute the requested features

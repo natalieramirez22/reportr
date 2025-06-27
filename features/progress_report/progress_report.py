@@ -81,6 +81,7 @@ def create_repository_overview(git_data, branch):
         f"[bold sky_blue1]Total Commits:[/bold sky_blue1] {git_data['total_commits']}",
         title="Repository Overview",
         border_style="plum2",
+        title_align="left",
         padding=(1, 2),
     )
 
@@ -195,14 +196,16 @@ def create_progress_report(
         include_contributor_summaries: Whether to include detailed summaries for each contributor
         branch: Optional branch name to analyze
     """
+
     console.print("[bold sky_blue1]🚀 Generating Progress Report[/bold sky_blue1]")
+
 
     git_data = get_git_history(repo_path, days_back, contributor_filter, branch)
     # console.print(f"Git Data: {git_data}")
 
     if not git_data:
         console.print(
-            "[red]❌ Could not analyze git repository. Make sure you're in a git repository.[/red]"
+            "[red]Could not analyze git repository. Make sure you're in a git repository.[/red]"
         )
         return
 
@@ -291,7 +294,8 @@ def create_progress_report(
     # display the main report in a panel
     main_report_panel = Panel(
         formatted_report,
-        title="📊 AI-Generated Progress Report",
+        title=" AI-Generated Progress Report",
+        title_align="left",
         border_style="plum2",
         padding=(1, 2),
     )
@@ -308,5 +312,5 @@ def create_progress_report(
             main_report += f"\n\n{contributor_summary}\n"
             main_report += "-" * 50
 
-    console.print("[bold green]✅ Progress report generation complete![/bold green]")
+    console.print("[bold green]Progress report generation complete![/bold green]")
     return main_report
