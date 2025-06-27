@@ -279,22 +279,22 @@ def summarize_details(client, repo_path="."):
             
             if isinstance(content, dict) and content.get("type") == "file":
                 # This is a file
-                tree_output.append(f"{current_prefix}[green]{name}[/green]")
+                tree_output.append(f"{current_prefix}[cornsilk1]{name}[/cornsilk1]")
             elif isinstance(content, dict) and content.get("type") == "folder":
                 # This is a directory
-                tree_output.append(f"{current_prefix}[bold yellow]{name}/[/bold yellow]")
+                tree_output.append(f"{current_prefix}[bold pink1]{name}/[/bold pink1]")
                 build_text_tree(content.get("contents", {}), next_prefix, is_last_item)
 
     build_text_tree(repo_structure)
     summary_parts.append("\n".join(tree_output))
 
     # Add summaries for each directory
-    summary_parts.append("\n[bold sky_blue1]Directory Summaries:[/bold sky_blue1]")
+    summary_parts.append("\n[bold plum2]Directory Summaries:[/bold plum2]")
     directory_map = collect_relevant_files(repo_path)
 
     for path, files in directory_map.items():
         # Add directory header - don't decorate the path value
-        summary_parts.append(f"\n[bold yellow]Directory:[/bold yellow] {path}")
+        summary_parts.append(f"\n[bold sky_blue1]Directory:[/bold sky_blue1] {path}")
         
         # Get the raw summary
         summary = summarize_directory(path, files, client)
@@ -375,10 +375,10 @@ def print_tree(root_path, prefix=""):
         for name, content in sorted(structure.items()):
             if isinstance(content, dict) and content.get("type") == "file":
                 # This is a file - green color
-                parent_node.add(f"[green]{name}[/green]")
+                parent_node.add(f"[cornsilk1]{name}[/cornsilk1]")
             elif isinstance(content, dict) and content.get("type") == "folder":
                 # This is a directory - yellow color with slash
-                folder_node = parent_node.add(f"[bold yellow]{name}/[/bold yellow]")
+                folder_node = parent_node.add(f"[bold pink1]{name}/[/bold pink1]")
                 build_rich_tree(content.get("contents", {}), folder_node)
     
     build_rich_tree(repo_structure, tree)

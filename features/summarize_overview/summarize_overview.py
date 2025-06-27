@@ -1,7 +1,5 @@
 import os
 import json
-from openai import AzureOpenAI
-from dotenv import load_dotenv
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
@@ -238,9 +236,9 @@ def summarize_overview(client, repo_path="."):
     
     # Add repository info
     repo_name = os.path.basename(os.path.abspath(repo_path))
-    formatted_parts.append(f"[bold yellow]Directory:[/bold yellow] {repo_name}")
-    formatted_parts.append(f"[bold yellow]Analysis Method:[/bold yellow] Summarized Overview")
-    formatted_parts.append(f"[bold yellow]Path:[/bold yellow] {repo_path}\n")
+    formatted_parts.append(f"[bold plum2]Directory:[/bold plum2] {repo_name}")
+    formatted_parts.append(f"[bold plum2]Analysis Method:[/bold plum2] Summarized Overview")
+    formatted_parts.append(f"[bold plum2]Path:[/bold plum2] {repo_path}\n")
     
     # Add the main summary - use plain text with some basic formatting instead of full markdown
     formatted_parts.append("[bold sky_blue1]Detailed Analysis:[/bold sky_blue1]")
@@ -275,7 +273,7 @@ def summarize_overview(client, repo_path="."):
             number_part = line[:space_index + 1]
             text_content = line[space_index + 1:].strip()
             formatted_line = format_markdown_text(text_content)
-            processed_lines.append(f"    [bold cyan]{number_part}[/bold cyan][white]{formatted_line}[/white]")
+            processed_lines.append(f"    [bold bright_white]{number_part}[/bold bright_white][white]{formatted_line}[/white]")
             in_numbered_list = True
             current_list_number = int(number_part.replace('.', '').strip())
         # Color code bullet points (lines starting with -)
@@ -334,7 +332,7 @@ def summarize_overview(client, repo_path="."):
     
     total_files, total_folders = count_items(repo_structure)
     formatted_parts.append(f"├── [green]Total Files:[/green] {total_files}")
-    formatted_parts.append(f"├── [yellow]Total Directories:[/yellow] {total_folders}")
+    formatted_parts.append(f"├── [green]Total Directories:[/green] {total_folders}")
     
     # Count file types
     file_types = {}
@@ -349,7 +347,7 @@ def summarize_overview(client, repo_path="."):
     
     count_file_types(repo_structure)
     if file_types:
-        formatted_parts.append(f"└── [cyan]File Types:[/cyan]")
+        formatted_parts.append(f"└── [green]File Types:[/green]")
         for ext, count in sorted(file_types.items(), key=lambda x: x[1], reverse=True)[:5]:  # Top 5 file types
             formatted_parts.append(f"    ├── {ext}: {count} files")
     
