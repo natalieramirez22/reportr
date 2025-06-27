@@ -23,26 +23,38 @@ def format_markdown_to_rich(markdown_text: str) -> str:
     formatted_text = markdown_text
 
     # Bold text: **text** or __text__ -> [bold]text[/bold]
-    formatted_text = re.sub(r"\*\*(.*?)\*\*", r"[bold]\1[/bold]", formatted_text)
-    formatted_text = re.sub(r"__(.*?)__", r"[bold]\1[/bold]", formatted_text)
-
-    # Italic text: *text* or _text_ -> [italic]text[/italic]
-    formatted_text = re.sub(r"\*(.*?)\*", r"[italic]\1[/italic]", formatted_text)
-    formatted_text = re.sub(r"_(.*?)_", r"[italic]\1[/italic]", formatted_text)
-
-    # Code blocks: `code` -> [code]code[/code]
-    formatted_text = re.sub(r"`([^`]+)`", r"[code]\1[/code]", formatted_text)
-
-    # Headers: # Header -> [bold cyan]Header[/bold cyan]
     formatted_text = re.sub(
-        r"^### (.*?)$", r"[bold]\1[/bold]", formatted_text, flags=re.MULTILINE
+        r"\*\*(.*?)\*\*", r"[bold sky_blue1]\1[/bold sky_blue1]", formatted_text
     )
     formatted_text = re.sub(
-        r"^## (.*?)$", r"[bold]\1[/bold]", formatted_text, flags=re.MULTILINE
+        r"__(.*?)__", r"[bold sky_blue1]\1[/bold sky_blue1]", formatted_text
+    )
+
+    # Code blocks: `code` -> [code]code[/code]
+    formatted_text = re.sub(r"`([^`]+)`", r"[cornsilk1]\1[/cornsilk1]", formatted_text)
+
+    # Headers: # Header -> [bold pink1]Header[/bold pink1]
+    formatted_text = re.sub(
+        r"^#### (.*?)$",
+        r"[bold pink1]\1[/bold pink1]",
+        formatted_text,
+        flags=re.MULTILINE,
+    )
+    formatted_text = re.sub(
+        r"^### (.*?)$",
+        r"[bold plum2]\1[/bold plum2]",
+        formatted_text,
+        flags=re.MULTILINE,
+    )
+    formatted_text = re.sub(
+        r"^## (.*?)$",
+        r"[bold pink1]\1[/bold pink1]",
+        formatted_text,
+        flags=re.MULTILINE,
     )
     formatted_text = re.sub(
         r"^# (.*?)$",
-        r"[bold]\1[/bold]",
+        r"[bold plum2]\1[/bold plum2]",
         formatted_text,
         flags=re.MULTILINE,
     )
@@ -81,7 +93,7 @@ def create_contributor_summary(git_data):
     contributors_table.add_column("Contributor", style="sky_blue1", no_wrap=True)
     contributors_table.add_column("Commits", style="pink1", justify="right")
     contributors_table.add_column("Lines Added", style="green", justify="right")
-    contributors_table.add_column("Lines Deleted", style="red", justify="right")
+    contributors_table.add_column("Lines Deleted", style="white", justify="right")
     contributors_table.add_column("Files Changed", style="plum2", justify="right")
     contributors_table.add_column("Net Lines", style="cornsilk1", justify="right")
 
@@ -129,6 +141,39 @@ def create_commits_table(git_data, max_commits=10):
         )
 
     return commits_table
+
+
+def clean_repetitive_content(text):
+    """
+    Clean up repetitive content in AI-generated reports
+    """
+    if not text:
+        return text
+
+    # Split into lines and remove duplicate consecutive lines
+    lines = text.split("\n")
+    cleaned_lines = []
+    prev_line = None
+
+    for line in lines:
+        line = line.strip()
+        if line != prev_line:
+            cleaned_lines.append(line)
+            prev_line = line
+
+    # Remove excessive separators
+    cleaned_text = "\n".join(cleaned_lines)
+    cleaned_text = re.sub(r"---\s*\n\s*---\s*\n\s*---", "---", cleaned_text)
+
+    # Remove excessive "Summary:" sections
+    cleaned_text = re.sub(
+        r"(\[bold skyblue1\]Summary:\[/bold skyblue1\].*?)(?=\[bold skyblue1\]Summary:\[/bold skyblue1\])",
+        r"\1",
+        cleaned_text,
+        flags=re.DOTALL,
+    )
+
+    return cleaned_text
 
 
 # ! MAIN FUNCTION
@@ -224,10 +269,16 @@ def create_progress_report(
             progress.update(task, description="Generating AI analysis...")
 
             response = client.chat.completions.create(
-                model="reportr", messages=messages, max_tokens=2000, temperature=0.7
+                model="reportr",
+                messages=messages,
+                max_tokens=1500,  # Reduced from 2000 to prevent repetitive output
+                temperature=0.5,  # Reduced from 0.7 for more focused output
             )
 
             main_report = response.choices[0].message.content
+
+            # Clean up repetitive content
+            main_report = clean_repetitive_content(main_report)
 
             progress.update(task, description="AI analysis complete!")
     except Exception as e:
