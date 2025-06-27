@@ -1,6 +1,6 @@
-# Reportr - Git Repository Progress Reporter
+# Reportr - Repository Reporter
 
-A Python tool that uses Azure OpenAI to generate comprehensive progress reports for git repositories by analyzing commit history, contributors, and code changes.
+A Python CLI tool that uses AI to generate progress reports, README files, code summaries, and security insights for your Git repository.
 
 ## Features
 
