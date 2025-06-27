@@ -16,7 +16,7 @@ from features.summarize_details.summarize_details import (
 from features.summarize_overview.summarize_overview import (
     summarize_overview,
 )
-from help_command import show_help
+from functions.help_command import show_help
 
 from features.code_quality.llm_file_scan import create_llm_file_scan
 from features.code_quality.security_scan_summary import (
