@@ -34,6 +34,7 @@ def show_help():
     console.print("  [plum2]--path[/plum2]      Path to repository or directory (default: current directory)")
     console.print("  [plum2]--files[/plum2]     List of files or directories to scan (for llm-file-scan)")
     console.print("  [plum2]--input[/plum2]     Input JSON file for scan summary commands")
+
     console.print("  [plum2]--username[/plum2]  Filter by contributor username")
     console.print("  [plum2]--days[/plum2]      Days to look back (default: [white]30[/white])")
     console.print("  [plum2]--detailed[/plum2]  Include detailed summaries")

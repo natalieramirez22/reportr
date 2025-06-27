@@ -4,6 +4,9 @@ import openai
 from openai import AzureOpenAI
 from dotenv import load_dotenv
 from pathlib import Path
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn
+import re
 
 def analyze_repository_structure(repo_path="."):
     """
@@ -111,7 +114,6 @@ def generate_readme(client, repo_path="."):
     """
     Generate a comprehensive README file for a repository based on its structure and content
     """
-    print("Analyzing repository structure...")
     repo_analysis = analyze_repository_structure(repo_path)
     
     # Prepare the analysis data for the LLM
@@ -142,12 +144,13 @@ Files in Repository:
     # Load the prompt template
     prompt_path = os.path.join(os.path.dirname(__file__), 'prompt.txt')
     try:
-        with open(prompt_path, 'r') as f:
-            prompt_template = f.read()
-        
-        # Replace the placeholder with actual data
-        prompt_template = prompt_template.replace('{analysis_context}', analysis_context)
-        messages = json.loads(prompt_template)
+        with open(prompt_path, 'r', encoding='utf-8') as f:
+            messages = json.load(f)
+
+        # Inject analysis context into the prompt
+        for message in messages:
+            if '{analysis_context}' in message.get("content", ""):
+                message["content"] = message["content"].replace("{analysis_context}", analysis_context)
         
     except Exception as e:
         print(f"Error loading prompt template: {e}")
@@ -176,24 +179,85 @@ Files in Repository:
         ]
     
     # Generate the README using the LLM
-    response = client.chat.completions.create(
-        model="reportr",
-        messages=messages,
-        max_tokens=3000,
-        temperature=0.7
-    )
+    console = Console()
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Generating AI analysis...", total=None)
+            progress.update(task, description="Generating README...")
+            
+            response = client.chat.completions.create(
+                model="reportr",
+                messages=messages,
+                max_tokens=3000,
+                temperature=0.7
+            )
+            
+            progress.update(task, description="README generation complete!")
+    except Exception as e:
+        console.print(f"[red]Error generating README: {e}[/red]")
+        return f"Error: Could not generate README"
     
-    return response.choices[0].message.content 
+    # Format the README content with Rich styling
+    readme_content = response.choices[0].message.content
+    formatted_readme = format_markdown_readme(readme_content)
+    
+    return formatted_readme 
 
-def write_to_readme_file(readme_content, output_path="TEST_README.md"):
+def write_to_readme_file(readme_content, output_path="GENERATED_README.md"):
     """
     Write the generated README content to a file
     """
+    console = Console()
     try:
+        # Strip Rich formatting before writing to file
+        clean_content = re.sub(r'\[/?[^\]]*\]', '', readme_content)
+        
         with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(readme_content)
-        print(f"README file written successfully to {output_path}")
+            f.write(clean_content)
+        console.print(f"[bold white]\nREADME file written successfully to {output_path}\n[/bold white]")
         return True
     except Exception as e:
-        print(f"Error writing README file: {e}")
-        return False 
+        console.print(f"[red]Error writing README file: {e}[/red]")
+        return False
+
+def format_markdown_readme(markdown_text):
+    """
+    Format markdown text with Rich styling for display
+    """
+    if not markdown_text:
+        return markdown_text
+    
+    formatted_text = markdown_text
+    
+    # Format code blocks first (including # comments inside them)
+    # ```code``` -> [cornsilk1]```code```[/cornsilk1]
+    def format_code_block(match):
+        code_content = match.group(1)
+        # Format # comments inside code blocks as wheat1
+        code_content = re.sub(r'^(\s*)# (.*)$', r'\1[wheat1]# \2[/wheat1]', code_content, flags=re.MULTILINE)
+        return f'[cornsilk1]```{code_content}```[/cornsilk1]'
+    
+    formatted_text = re.sub(r'```([^`]+)```', format_code_block, formatted_text, flags=re.DOTALL)
+    
+    # `inline code` -> [cornsilk1]`inline code`[/cornsilk1]
+    formatted_text = re.sub(r'`([^`\n]+)`', r'[cornsilk1]`\1`[/cornsilk1]', formatted_text)
+    
+    # Now format headers with different colors - process from most specific to least specific
+    # ### Header and beyond -> [green]### Header[/green] (do these first)
+    formatted_text = re.sub(r'^### (.*?)$', r'[green]### \1[/green]', formatted_text, flags=re.MULTILINE)
+    formatted_text = re.sub(r'^#### (.*?)$', r'[green]#### \1[/green]', formatted_text, flags=re.MULTILINE)
+    formatted_text = re.sub(r'^##### (.*?)$', r'[green]##### \1[/green]', formatted_text, flags=re.MULTILINE)
+    formatted_text = re.sub(r'^###### (.*?)$', r'[green]###### \1[/green]', formatted_text, flags=re.MULTILINE)
+    
+    # ## Header -> [sky_blue1]## Header[/sky_blue1]
+    formatted_text = re.sub(r'^## (.*?)$', r'[sky_blue1]## \1[/sky_blue1]', formatted_text, flags=re.MULTILINE)
+    
+    # # Header -> [plum2]# Header[/plum2] (single # only, not ## or ### and not inside code blocks)
+    # Negative lookahead to avoid matching inside already formatted code blocks
+    formatted_text = re.sub(r'^# (?!#)(?![^[]*\[/cornsilk1\])(.*?)$', r'[plum2]# \1[/plum2]', formatted_text, flags=re.MULTILINE)
+    
+    return formatted_text

@@ -10,10 +10,13 @@ from features.generate_readme.generate_readme import (
     generate_readme,
     write_to_readme_file,
 )
-from features.summarize_repo.summarize_repo import (
-    summarize_by_folder,
-    summarize_entire_directory,
+from features.summarize_details.summarize_details import (
+    summarize_details,
 )
+from features.summarize_overview.summarize_overview import (
+    summarize_overview,
+)
+from functions.help_command import show_help
 
 from features.code_quality.llm_file_scan import create_llm_file_scan
 from features.code_quality.security_scan_summary import (
@@ -27,6 +30,7 @@ from features.code_quality.codeql_cwe_insights import generate_codeql_cwe_insigh
 
 # load environment variables from .env file
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
@@ -49,13 +53,22 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Reportr - AI-powered repository analysis and documentation tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
+        add_help=False,  # Disable default help to use our Rich styled help
         epilog="""
             Examples:
-            python reportr_client.py progress-report
-            python reportr_client.py generate-readme
-            python reportr_client.py summarize-by-folder --path /path/to/repo
-            python reportr_client.py summarize-entire-directory --path /path/to/repo
+            python reportr.py generate-readme
+            python reportr.py summarize-details --path /path/to/repo
+            python reportr.py summarize-overviews --path /path/to/repo
+            python reportr.py progress-report --username "msft-alias"
+            python reportr.py progress-report --days 60 --detailed
+            python reportr.py progress-report --branch "develop"
+            python reportr.py progress-report --branch "feature/new-feature" --username "dev1" --username "dev2"
         """,
+    )
+
+    # Add help argument manually
+    parser.add_argument(
+        "-h", "--help", action="store_true", help="Show this help message and exit"
     )
 
     # create subparsers for different commands
@@ -80,14 +93,20 @@ def parse_arguments():
         "--detailed", action="store_true", help="Include detailed contributor summaries"
     )
 
+    progress_parser.add_argument(
+        "--branch",
+        type=str,
+        help="Specify which branch to analyze (default: tries main, then master, then all branches)",
+    )
+
     # generate-readme subcommand
     readme_parser = subparsers.add_parser(
         "generate-readme", help="Generate a README file for the current repository"
     )
 
-    # summarize-by-folder subcommand
+    # summarize-details subcommand
     summarize_folder_parser = subparsers.add_parser(
-        "summarize-by-folder", help="Summarize the repository using directory-by-directory approach"
+        "summarize-details", help="Summarize a sub-directory with a focus on details"
     )
     summarize_folder_parser.add_argument(
         "--path",
@@ -96,10 +115,11 @@ def parse_arguments():
         help="Path to the local repository or directory to summarize (default: current directory)",
     )
 
-    # summarize-entire-directory subcommand
+    # summarize-overview subcommand
     summarize_entire_parser = subparsers.add_parser(
-        "summarize-entire-directory", help="Summarize the repository using the entire structure as JSON context"
+        "summarize-overview", help="Summarize the repository overview and structure"
     )
+
     summarize_entire_parser.add_argument(
         "--path",
         type=str,
@@ -112,10 +132,7 @@ def parse_arguments():
         "llm-file-scan", help="Analyze code files for security issues using LLM"
     )
     llm_scan_parser.add_argument(
-        "--files",
-        nargs="+",
-        required=True,
-        help="List of code files to analyze"
+        "--files", nargs="+", required=True, help="List of code files to analyze"
     )
 
     # security-scan-summary subcommand
@@ -124,9 +141,7 @@ def parse_arguments():
         "security-scan-summary", help="Summarize security scan results (text output)"
     )
     sec_scan_parser.add_argument(
-        "--input",
-        required=True,
-        help="Path to a JSON file with scan results"
+        "--input", required=True, help="Path to a JSON file with scan results"
     )
 
     # codeql-cwe-summary subcommand
@@ -135,9 +150,7 @@ def parse_arguments():
         "codeql-cwe-summary", help="Summarize CodeQL scan results (JSON output)"
     )
     codeql_parser.add_argument(
-        "--input",
-        required=True,
-        help="Path to a JSON file with scan results"
+        "--input", required=True, help="Path to a JSON file with scan results"
     )
 
     return parser.parse_args()
@@ -154,36 +167,41 @@ def execute_features(args):
 
     # if 'progress-report' command is provided, generate a progress report
     if args.command == "progress-report":
-        report = create_progress_report(
+        create_progress_report(
             client,
             days_back=args.days,
             contributor_filter=args.username,
-            include_contributor_summaries=args.detailed,
+            branch=args.branch,
+            use_specific_user_prompt=bool(args.username),
         )
-        results.append(("Progress Report", report))
 
     # if 'generate-readme' command is provided, generate a README file
     elif args.command == "generate-readme":
         readme = generate_readme(client)
         write_to_readme_file(readme)
-        results.append(("README", readme))
 
     # if 'summarize-by-folder' command is provided, summarize using directory-by-directory approach
-    elif args.command == "summarize-by-folder":
-        summary = summarize_by_folder(client, repo_path=args.path)
+    elif args.command == "summarize-details":
+        summary = summarize_details(client, repo_path=args.path)
         results.append(("Repository Directory Summary", summary))
-    
-    # if 'summarize-entire-directory' command is provided, summarize using JSON structure
-    elif args.command == "summarize-entire-directory":
-        summary = summarize_entire_directory(client, repo_path=args.path)
-        results.append(("Repository JSON Structure Summary", summary))
 
-   # if 'llm-file-scan' command is provided, analyze files with LLM
+    # if 'summarize-entire-directory' command is provided, summarize entire directory
+    elif args.command == "summarize-overview":
+        summary = summarize_overview(client, repo_path=args.path)
+        results.append(("Repository Summary", summary))
+
+    # if 'llm-file-scan' command is provided, analyze files with LLM
     elif args.command == "llm-file-scan":
-        from features.code_quality.llm_file_scan import collect_code_files_from_path, create_llm_file_scan
+        from features.code_quality.llm_file_scan import (
+            collect_code_files_from_path,
+            create_llm_file_scan,
+        )
+
         all_files = []
         for path in args.files:
-            all_files.extend(collect_code_files_from_path(path, exts={'.py'}))  # or whatever extensions you want
+            all_files.extend(
+                collect_code_files_from_path(path, exts={".py"})
+            )  # or whatever extensions you want
 
         issues = create_llm_file_scan(client, args.files)
         # print("LLM Security Issues Output:")
@@ -193,6 +211,7 @@ def execute_features(args):
     # if 'security-scan-summary' command is provided, summarize security scan results in text format
     elif args.command == "security-scan-summary":
         from features.code_quality.security_scan_summary import SecurityScanResult
+
         with open(args.input) as f:
             raw = json.load(f)
         # Convert dicts to SecurityScanResult objects
@@ -205,7 +224,6 @@ def execute_features(args):
             scan_results = json.load(f)
         summary = generate_codeql_cwe_insights(scan_results, client)
         results.append(("CodeQL CWE Insights", summary))
-           
 
     return results
 
@@ -216,34 +234,31 @@ def main():
     # parse the arguments
     args = parse_arguments()
 
-    # if no command provided, show help
-    if not args.command:
-        parser = argparse.ArgumentParser(
-            description="Reportr - AI-powered repository analysis and documentation tool"
-        )
-        parser.print_help()
+    # Check if help was requested or no command provided
+    if (hasattr(args, "help") and args.help) or not args.command:
+        show_help()
         return
 
     # execute the requested features
     results = execute_features(args)
 
-    # Create Rich console for beautiful output
-    console = Console()
+    # only apply rich formatting for summarize commands
+    if args.command in ["summarize-details", "summarize-overview"]:
+        console = Console()
 
-    # print the results with Rich formatting
-    for title, content in results:
-        # Create a styled panel for each result with better width management
-        panel = Panel(
-            content,
-            title=f"[bold blue]{title}[/bold blue]",
-            title_align="left",
-            border_style="blue",
-            padding=(1, 2),
-            expand=False,
-            width=min(120, console.size.width - 4)  # Responsive width with max limit
-        )
-        console.print(panel)
-        console.print()  # Add some spacing between panels
+        # print the results with rich formatting
+        for title, content in results:
+            panel = Panel(
+                content,
+                title=f"[bold sky_blue1]{title}[/bold sky_blue1]",
+                title_align="left",
+                border_style="sky_blue2",
+                padding=(1, 2),
+                expand=False,
+                width=min(120, console.size.width - 4),
+            )
+            console.print(panel)
+            console.print()
 
 
 if __name__ == "__main__":
