@@ -57,12 +57,13 @@ def parse_arguments():
         epilog="""
             Examples:
             python reportr.py generate-readme
+            python reportr.py generate-readme --path /path/to/repo
             python reportr.py summarize-details --path /path/to/repo
             python reportr.py summarize-overviews --path /path/to/repo
             python reportr.py progress-report --username "msft-alias"
-            python reportr.py progress-report --days 60 --detailed
+            python reportr.py progress-report --path /path/to/repo --days 60
             python reportr.py progress-report --branch "develop"
-            python reportr.py progress-report --branch "feature/new-feature" --username "dev1" --username "dev2"
+            python reportr.py progress-report --path /path/to/repo --branch "feature/new-feature" --username "dev1" --username "dev2"
         """,
     )
 
@@ -79,6 +80,12 @@ def parse_arguments():
         "progress-report", help="Generate a progress report for the current repository"
     )
     progress_parser.add_argument(
+        "--path",
+        type=str,
+        default=".",
+        help="Path to the local repository or directory to analyze (default: current directory)",
+    )
+    progress_parser.add_argument(
         "--username",
         action="append",
         help="Filter by specific contributor username(s). Can be used multiple times.",
@@ -90,10 +97,6 @@ def parse_arguments():
         help="Number of days to look back (default: 30, use 0 for all time)",
     )
     progress_parser.add_argument(
-        "--detailed", action="store_true", help="Include detailed contributor summaries"
-    )
-
-    progress_parser.add_argument(
         "--branch",
         type=str,
         help="Specify which branch to analyze (default: tries main, then master, then all branches)",
@@ -102,6 +105,12 @@ def parse_arguments():
     # generate-readme subcommand
     readme_parser = subparsers.add_parser(
         "generate-readme", help="Generate a README file for the current repository"
+    )
+    readme_parser.add_argument(
+        "--path",
+        type=str,
+        default=".",
+        help="Path to the local repository or directory to generate README for (default: current directory)",
     )
 
     # summarize-details subcommand
@@ -169,6 +178,7 @@ def execute_features(args):
     if args.command == "progress-report":
         create_progress_report(
             client,
+            repo_path=args.path,
             days_back=args.days,
             contributor_filter=args.username,
             branch=args.branch,
@@ -177,7 +187,7 @@ def execute_features(args):
 
     # if 'generate-readme' command is provided, generate a README file
     elif args.command == "generate-readme":
-        readme = generate_readme(client)
+        readme = generate_readme(client, repo_path=args.path)
         write_to_readme_file(readme)
 
     # if 'summarize-by-folder' command is provided, summarize using directory-by-directory approach
